@@ -7,3 +7,11 @@ dist
 tsconfig.tsbuildinfo
 .replit-artifact
 .vercel
+android/.gradle
+android/app/build
+android/build
+ios/App/Pods
+ios/App/build
+*.keystore
+*.jks
+*.mobileprovision
