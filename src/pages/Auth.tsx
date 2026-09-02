@@ -91,7 +91,7 @@ export default function Auth() {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-3">
           <img
-            src="/icon-192.png"
+            src={`${import.meta.env.BASE_URL}icon-192.png`}
             alt="Pins Pets"
             className="w-20 h-20 mx-auto rounded-2xl shadow-lg"
           />

@@ -15,10 +15,12 @@ export const SPECIES_LABELS: Record<Species, string> = {
   other: "Other pet",
 };
 
+const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
+
 export const MAP_IMAGES: Record<Species, Record<MapView, string>> = {
-  dog: { side: "/body-map/dog-side.jpg", top: "/body-map/dog-top.jpg" },
-  cat: { side: "/body-map/cat-side.jpg", top: "/body-map/cat-top.jpg" },
-  other: { side: "/body-map/other-side.jpg", top: "/body-map/other-top.jpg" },
+  dog: { side: asset("body-map/dog-side.jpg"), top: asset("body-map/dog-top.jpg") },
+  cat: { side: asset("body-map/cat-side.jpg"), top: asset("body-map/cat-top.jpg") },
+  other: { side: asset("body-map/other-side.jpg"), top: asset("body-map/other-top.jpg") },
 };
 
 const dogSites: BodySite[] = [
