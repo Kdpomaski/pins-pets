@@ -2,7 +2,7 @@
 
 **Pet medication & injection tracker** — a clone of [Pins](https://github.com/Kdpomaski/Pins-App) rebuilt for dogs, cats, and other pets.
 
-**Investor preview (separate from original Pins):** https://kdpomaski.github.io/Pins-Pets/
+**Live app:** https://kdpomaski.github.io/Pins-Pets/
 
 Local-first, privacy-focused visual tracker for injections, oral meds, insulin, vaccines, topicals, inventory, and scheduling.
 

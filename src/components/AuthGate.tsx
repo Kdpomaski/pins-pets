@@ -23,8 +23,7 @@ function SupabaseSetupNotice() {
 
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { status, configured } = useAuth();
-  const investorPreview = import.meta.env.VITE_INVESTOR_PREVIEW === 'true';
-  const skipAuth = investorPreview || (import.meta.env.DEV && !configured);
+  const skipAuth = import.meta.env.VITE_SKIP_AUTH === 'true' || (import.meta.env.DEV && !configured);
 
   if (!configured && !skipAuth) return <SupabaseSetupNotice />;
 
@@ -42,12 +41,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {investorPreview && (
-        <div className="bg-amber-50 border-b border-amber-200 text-amber-900 text-xs text-center py-2 px-4">
-          Investor preview — sample pets and meds on this device. Not a live veterinary record.
-        </div>
-      )}
-      {skipAuth && !investorPreview && (
+      {skipAuth && import.meta.env.DEV && import.meta.env.VITE_SKIP_AUTH !== 'true' && (
         <div className="bg-amber-50 border-b border-amber-200 text-amber-900 text-xs text-center py-2 px-4">
           Dev preview — Supabase auth skipped. Add <code className="font-mono">.env</code> for beta login.
         </div>
