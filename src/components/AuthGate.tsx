@@ -1,0 +1,58 @@
+import { Shield } from 'lucide-react';
+import Auth from '@/pages/Auth';
+import Onboarding from '@/pages/Onboarding';
+import { useAuth } from '@/lib/auth-context';
+
+function SupabaseSetupNotice() {
+  return (
+    <div className="min-h-[100dvh] flex items-center justify-center bg-background px-4">
+      <div className="max-w-md border border-border rounded-2xl bg-card p-6 space-y-3 text-sm">
+        <h1 className="text-lg font-semibold">Supabase not configured</h1>
+        <p className="text-muted-foreground">
+          Copy <code className="text-foreground">.env.example</code> to <code className="text-foreground">.env</code> and
+          set your Supabase project URL and anon key to enable beta authentication.
+        </p>
+        <p className="text-muted-foreground">
+          Run <code className="text-foreground">supabase/schema.sql</code> in the Supabase SQL editor, then enable
+          Email and Google providers in Authentication → Providers.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+export function AuthGate({ children }: { children: React.ReactNode }) {
+  const { status, configured } = useAuth();
+  const investorPreview = import.meta.env.VITE_INVESTOR_PREVIEW === 'true';
+  const skipAuth = investorPreview || (import.meta.env.DEV && !configured);
+
+  if (!configured && !skipAuth) return <SupabaseSetupNotice />;
+
+  if (!skipAuth && status === 'loading') {
+    return (
+      <div className="min-h-[100dvh] flex items-center justify-center bg-background text-muted-foreground">
+        <Shield className="animate-pulse mr-2" size={20} />
+        Checking session…
+      </div>
+    );
+  }
+
+  if (!skipAuth && status === 'unauthenticated') return <Auth />;
+  if (!skipAuth && status === 'onboarding') return <Onboarding />;
+
+  return (
+    <>
+      {investorPreview && (
+        <div className="bg-amber-50 border-b border-amber-200 text-amber-900 text-xs text-center py-2 px-4">
+          Investor preview — sample pets and meds on this device. Not a live veterinary record.
+        </div>
+      )}
+      {skipAuth && !investorPreview && (
+        <div className="bg-amber-50 border-b border-amber-200 text-amber-900 text-xs text-center py-2 px-4">
+          Dev preview — Supabase auth skipped. Add <code className="font-mono">.env</code> for beta login.
+        </div>
+      )}
+      {children}
+    </>
+  );
+}
