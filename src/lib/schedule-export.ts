@@ -3,14 +3,26 @@ import {
   addMonths,
   addWeeks,
   differenceInDays,
+  endOfDay,
   format,
   setHours,
   setMinutes,
   startOfDay,
 } from 'date-fns';
-import type { InjectionLog, InventoryItem, PinsData } from '@/lib/store';
+import { inventoryForPet, type InjectionLog, type InventoryItem, type PinsData } from '@/lib/store';
 
 export type ExportFormat = 'calendar' | 'text';
+
+export type ExportRange = {
+  from: Date;
+  to: Date;
+};
+
+export type ExportOptions = {
+  range: ExportRange;
+  petId?: string | null;
+  petName?: string;
+};
 
 function downloadBlob(content: string, filename: string, mime: string) {
   const blob = new Blob([content], { type: mime });
@@ -117,18 +129,49 @@ function generateDoseDates(
 
 type PlannedDose = { at: Date; compound: string; dose: number; unit: InventoryItem['unit'] };
 
+function matchesPet<T extends { petId?: string | null }>(row: T, petId?: string | null): boolean {
+  if (!petId) return true;
+  if (!row.petId) return true;
+  return row.petId === petId;
+}
+
+export function inExportRange(iso: string, range: ExportRange): boolean {
+  const t = new Date(iso).getTime();
+  return t >= startOfDay(range.from).getTime() && t <= endOfDay(range.to).getTime();
+}
+
+export function logsInRange(
+  data: PinsData,
+  compounds: string[],
+  range: ExportRange,
+  petId?: string | null,
+): InjectionLog[] {
+  return data.logs
+    .filter((log) => {
+      if (petId && log.petId !== petId) return false;
+      if (!compounds.includes(log.compound)) return false;
+      return inExportRange(log.timestamp, range);
+    })
+    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+}
+
 export function buildFutureDoses(
   compounds: string[],
   data: PinsData,
-  start = startOfDay(new Date()),
+  options?: { start?: Date; end?: Date; petId?: string | null },
 ): PlannedDose[] {
   const planned: PlannedDose[] = [];
+  const start = startOfDay(options?.start ?? new Date());
+  const end = options?.end ? endOfDay(options.end) : null;
+  const inventory = inventoryForPet(data.inventory, options?.petId ?? null);
 
   for (const compound of compounds) {
-    const item = data.inventory.find((i) => i.name === compound);
+    const item = inventory.find((i) => i.name === compound) ?? data.inventory.find((i) => i.name === compound);
     if (!item) continue;
 
-    const schedule = data.schedule.find((s) => s.compound === compound && s.active);
+    const schedule = data.schedule.find(
+      (s) => s.compound === compound && s.active && matchesPet(s, options?.petId),
+    );
     const dose = schedule?.dose ?? item.defaultDose ?? 0;
     const unit = schedule?.unit ?? item.unit;
     const time = schedule?.time ?? '08:00';
@@ -138,7 +181,11 @@ export function buildFutureDoses(
     const total = remainingDoses(item, dose, unit);
     if (!total || !dose) continue;
 
-    const dates = generateDoseDates(total, frequency, start, time, weekdays);
+    const spanDays = end ? Math.max(1, differenceInDays(end, start) + 1) : total;
+    const estimate = Math.min(total, end ? spanDays * 3 : total);
+    const dates = generateDoseDates(estimate, frequency, start, time, weekdays).filter((at) =>
+      end ? at.getTime() <= end.getTime() : true,
+    );
     dates.forEach((at) => planned.push({ at, compound, dose, unit }));
   }
 
@@ -149,8 +196,13 @@ function icsDate(date: Date): string {
   return format(date, "yyyyMMdd'T'HHmmss");
 }
 
-export function buildIcsCalendar(compounds: string[], data: PinsData): string {
-  const doses = buildFutureDoses(compounds, data);
+export function buildIcsCalendar(compounds: string[], data: PinsData, options: ExportOptions): string {
+  const doses = buildFutureDoses(compounds, data, {
+    start: options.range.from,
+    end: options.range.to,
+    petId: options.petId,
+  });
+  const who = options.petName ? `${options.petName} · ` : '';
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
@@ -163,12 +215,12 @@ export function buildIcsCalendar(compounds: string[], data: PinsData): string {
     const end = new Date(dose.at.getTime() + 15 * 60 * 1000);
     lines.push(
       'BEGIN:VEVENT',
-      `UID:pins-${dose.compound.replace(/\s/g, '')}-${index}-${dose.at.getTime()}@pins.app`,
+      `UID:pins-pets-${dose.compound.replace(/\s/g, '')}-${index}-${dose.at.getTime()}@pins.app`,
       `DTSTAMP:${icsDate(new Date())}`,
       `DTSTART:${icsDate(dose.at)}`,
       `DTEND:${icsDate(end)}`,
-      `SUMMARY:${dose.compound} - ${dose.dose} ${dose.unit}`,
-      `DESCRIPTION:Scheduled dose of ${dose.compound} (${dose.dose} ${dose.unit}). Import into Google or Apple Calendar.`,
+      `SUMMARY:${who}${dose.compound} - ${dose.dose} ${dose.unit}`,
+      `DESCRIPTION:Scheduled dose of ${dose.compound} (${dose.dose} ${dose.unit})${options.petName ? ` for ${options.petName}` : ''}. Import into Google or Apple Calendar.`,
       'END:VEVENT',
     );
   });
@@ -177,20 +229,21 @@ export function buildIcsCalendar(compounds: string[], data: PinsData): string {
   return lines.join('\r\n');
 }
 
-export function buildAdministrationText(compounds: string[], data: PinsData): string {
-  const logs = data.logs
-    .filter((l) => compounds.includes(l.compound))
-    .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+export function buildAdministrationText(compounds: string[], data: PinsData, options: ExportOptions): string {
+  const logs = logsInRange(data, compounds, options.range, options.petId);
+  const rangeLabel = `${format(options.range.from, 'yyyy-MM-dd')} to ${format(options.range.to, 'yyyy-MM-dd')}`;
 
   const header = [
     'PINS PETS — Administration Log',
     `Exported: ${format(new Date(), 'yyyy-MM-dd HH:mm')}`,
-    `Compounds: ${compounds.join(', ')}`,
+    options.petName ? `Pet: ${options.petName}` : '',
+    `Range: ${rangeLabel}`,
+    `Medications: ${compounds.join(', ')}`,
     '',
-  ];
+  ].filter((line) => line !== '');
 
   if (logs.length === 0) {
-    return [...header, 'No administrations recorded for selected compounds.'].join('\n');
+    return [...header, 'No administrations in this date range for the selected medications.'].join('\n');
   }
 
   const body = logs.map((log: InjectionLog) => {
@@ -206,23 +259,35 @@ export function exportSchedule(
   formatType: ExportFormat,
   compounds: string[],
   data: PinsData,
+  options: ExportOptions,
 ) {
   if (compounds.length === 0) return;
 
-  const stamp = format(new Date(), 'yyyy-MM-dd');
+  const fromStamp = format(options.range.from, 'yyyy-MM-dd');
+  const toStamp = format(options.range.to, 'yyyy-MM-dd');
+  const petStamp = options.petName ? `-${options.petName.toLowerCase().replace(/\s+/g, '-')}` : '';
 
   if (formatType === 'calendar') {
-    downloadBlob(buildIcsCalendar(compounds, data), `pins-schedule-${stamp}.ics`, 'text/calendar;charset=utf-8');
+    downloadBlob(
+      buildIcsCalendar(compounds, data, options),
+      `pins-pets-schedule${petStamp}-${fromStamp}-to-${toStamp}.ics`,
+      'text/calendar;charset=utf-8',
+    );
     return;
   }
 
-  downloadBlob(buildAdministrationText(compounds, data), `pins-admin-log-${stamp}.txt`, 'text/plain;charset=utf-8');
+  downloadBlob(
+    buildAdministrationText(compounds, data, options),
+    `pins-pets-admin-log${petStamp}-${fromStamp}-to-${toStamp}.txt`,
+    'text/plain;charset=utf-8',
+  );
 }
 
-export function allCompoundNames(data: PinsData): string[] {
+export function allCompoundNames(data: PinsData, petId?: string | null): string[] {
   const names = new Set<string>();
-  data.inventory.forEach((i) => names.add(i.name));
-  data.schedule.forEach((s) => names.add(s.compound));
-  data.logs.forEach((l) => names.add(l.compound));
+  const inventory = inventoryForPet(data.inventory, petId ?? null);
+  inventory.forEach((i) => names.add(i.name));
+  data.schedule.filter((s) => matchesPet(s, petId)).forEach((s) => names.add(s.compound));
+  data.logs.filter((l) => !petId || l.petId === petId).forEach((l) => names.add(l.compound));
   return Array.from(names).sort();
 }
