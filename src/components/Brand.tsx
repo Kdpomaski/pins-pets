@@ -18,21 +18,21 @@ function PinsLetter() {
 
 export function PinsPetsLogoIcon({ size = 36 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 40 48" fill="none" aria-hidden="true">
-      <ellipse cx="7.5" cy="12.4" rx="4.5" ry="5.7" fill="#111" stroke="#E85D04" strokeWidth="1.9" />
-      <ellipse cx="15.2" cy="7.1" rx="4.7" ry="5.9" fill="#111" stroke="#E85D04" strokeWidth="1.9" />
-      <ellipse cx="24.8" cy="7.1" rx="4.7" ry="5.9" fill="#111" stroke="#E85D04" strokeWidth="1.9" />
-      <ellipse cx="32.5" cy="12.4" rx="4.5" ry="5.7" fill="#111" stroke="#E85D04" strokeWidth="1.9" />
+    <svg width={size} height={size} viewBox="0 0 40 50" fill="none" aria-hidden="true">
+      <ellipse cx="7.4" cy="10.4" rx="4.4" ry="5.5" fill="#111" stroke="#E85D04" strokeWidth="1.9" />
+      <ellipse cx="15.1" cy="5.6" rx="4.6" ry="5.7" fill="#111" stroke="#E85D04" strokeWidth="1.9" />
+      <ellipse cx="24.9" cy="5.6" rx="4.6" ry="5.7" fill="#111" stroke="#E85D04" strokeWidth="1.9" />
+      <ellipse cx="32.6" cy="10.4" rx="4.4" ry="5.5" fill="#111" stroke="#E85D04" strokeWidth="1.9" />
 
       <path
-        d="M20 21.4C11.2 21.4 5.2 27.2 5.5 35.6C5.8 43.6 11.6 48.2 20 48.2C28.4 48.2 34.2 43.6 34.5 35.6C34.8 27.2 28.8 21.4 20 21.4Z"
+        d="M20 16.6C9.2 16.6 3.0 24.0 3.4 34.4C3.8 44.2 10.6 49.2 20 49.2C29.4 49.2 36.2 44.2 36.6 34.4C37.0 24.0 30.8 16.6 20 16.6Z"
         fill="#111"
         stroke="#E85D04"
-        strokeWidth="2.3"
+        strokeWidth="2.2"
         strokeLinejoin="round"
       />
 
-      <g transform="translate(6.6, 13.1) scale(0.70)">
+      <g transform="translate(8.9, 16.4) scale(0.60)">
         <PinsLetter />
       </g>
     </svg>
