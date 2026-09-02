@@ -3,6 +3,7 @@ import { FcGoogle } from 'react-icons/fc';
 import { Mail, Lock } from 'lucide-react';
 import { supabase, getAuthRedirectUrl, isSupabaseConfigured } from '@/lib/supabase';
 import { startGoogleSignIn } from '@/lib/google-oauth';
+import { PinsPetsLogoIcon } from '@/components/Brand';
 import { Button } from '@/components/ui/button';
 
 type AuthMode = 'sign-in' | 'sign-up';
@@ -90,11 +91,9 @@ export default function Auth() {
     <div className="min-h-[100dvh] bg-background text-foreground flex items-center justify-center px-4 py-10">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-3">
-          <img
-            src={`${import.meta.env.BASE_URL}icon-192.png`}
-            alt="Pins Pets"
-            className="w-20 h-20 mx-auto rounded-2xl shadow-lg"
-          />
+          <div className="flex justify-center">
+            <PinsPetsLogoIcon size={80} />
+          </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Welcome to Pins Pets</h1>
             <p className="text-sm text-muted-foreground mt-1">
