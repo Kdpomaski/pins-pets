@@ -538,15 +538,20 @@ function AddInventoryModal({
   const colors = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899", "#14b8a6"];
 
   const handleSave = () => {
-    if (!name || !totalVolume) {
+    if (!name.trim() || !totalVolume) {
       setError("Medication name and quantity are required.");
       return;
     }
 
     const conc = concentration ? Number(concentration) : undefined;
     const vol = Number(totalVolume);
-    if ((concentration && (!Number.isFinite(conc) || conc! <= 0)) || !Number.isFinite(vol) || vol <= 0) {
+    if (!Number.isFinite(vol) || vol <= 0) {
       setError("Quantity must be a positive number.");
+      return;
+    }
+
+    if (form === "vial" && (!concentration || !Number.isFinite(conc) || conc! <= 0)) {
+      setError("Concentration must be a positive number for vials.");
       return;
     }
 
@@ -783,7 +788,7 @@ function AddInventoryModal({
 
           <button
             onClick={handleSave}
-            disabled={!name || !concentration || !totalVolume}
+            disabled={!name.trim() || !totalVolume || (form === "vial" && !concentration)}
             className="w-full bg-primary text-primary-foreground font-semibold rounded-xl p-4 mt-2 hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
             Add to Inventory
