@@ -50,14 +50,14 @@ export const FREE_BULLETS = [
 export const BUNDLE_COPY = {
   headline: 'Founding: Pins + Pets Pro',
   subhead:
-    'One $39.99 lifetime unlock for both apps on TestFlight. Annual Pro is still the best everyday plan.',
+    'One $79 lifetime unlock for both apps on TestFlight. Annual Pro is still the best everyday plan.',
   bullets: [
     'Pro in Pins and Pins Pets',
     'Unlimited protocols (and unlimited pets in Pets)',
     'Full history, sync, export / PDF, advanced inventory',
     'Founding price — TestFlight only',
   ] as const,
-  cta: 'Unlock both apps — $39.99 lifetime',
+  cta: 'Unlock both apps — $79 lifetime',
   badge: 'Founding · TestFlight · Both apps',
   pushAnnual: 'Or go annual in this app — $49.99/year',
   entitlement:

@@ -55,11 +55,11 @@ Product ID stubs (do **not** create live IAP in App Store Connect / Play until K
 | Lifetime | `com.two20tech.pinspets.pro.lifetime` | TBD |
 | Bundle monthly | `com.two20tech.bundle.pro.monthly` | TBD |
 | Bundle yearly | `com.two20tech.bundle.pro.yearly` | TBD |
-| Bundle founding lifetime | `com.two20tech.bundle.pro.lifetime` | $39.99 (TestFlight) |
+| Bundle founding lifetime | `com.two20tech.bundle.pro.lifetime` | $79 (TestFlight) |
 
 ### Cross-app bundle (Pins + Pins Pets)
 
-Purchase or restore in **either** app → local Pro flag → stub upsert to the signed-in **Supabase** account (`user_entitlements` / user metadata). The other app refreshes entitlement on launch / Restore / sign-in and unlocks Pro for both. Founding TF lifetime is the shared bundle SKU at **$39.99**.
+Purchase or restore in **either** app → local Pro flag → stub upsert to the signed-in **Supabase** account (`user_entitlements` / user metadata). The other app refreshes entitlement on launch / Restore / sign-in and unlocks Pro for both. Founding TF lifetime is the shared bundle SKU at **$79**.
 
 ### Feature flags
 

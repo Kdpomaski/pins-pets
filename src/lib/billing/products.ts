@@ -70,7 +70,7 @@ export const PETS_PRODUCTS: ProductStub[] = [
   },
 ];
 
-/** Bundle stubs — founding lifetime display $39.99 (TestFlight). Monthly/yearly TBD. */
+/** Bundle stubs — founding lifetime display $79 (TestFlight). Monthly/yearly TBD. */
 export const BUNDLE_PRODUCTS: ProductStub[] = [
   {
     id: BUNDLE_PRODUCT_IDS.monthly,
@@ -93,8 +93,8 @@ export const BUNDLE_PRODUCTS: ProductStub[] = [
   {
     id: BUNDLE_PRODUCT_IDS.lifetime,
     period: 'lifetime',
-    displayPrice: '$39.99',
-    priceUsd: 39.99,
+    displayPrice: '$79',
+    priceUsd: 79,
     founding: true,
     label: 'Founding Lifetime (Pins + Pets)',
     scope: 'bundle',
