@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Check, MapPin, Clock } from "lucide-react";
 import { usePinsStore, inventoryForPet, type DoseUnit, type MedType, type InventoryItem } from "@/lib/store";
 import { SPECIES_SITES, siteLabel } from "@/lib/body-map-data";
+import { useEntitlementsOptional } from "@/lib/billing/entitlement-context";
 
 type InjectionLoggerModalProps = {
   isOpen: boolean;
@@ -54,6 +55,7 @@ export function InjectionLoggerModal({
   defaultCompoundName,
 }: InjectionLoggerModalProps) {
   const { data, activePet, addLog } = usePinsStore();
+  const entitlements = useEntitlementsOptional();
   const petInventory = useMemo(
     () => inventoryForPet(data.inventory, activePet?.id ?? null),
     [data.inventory, activePet?.id],
@@ -142,6 +144,7 @@ export function InjectionLoggerModal({
       return;
     }
 
+    const priorLogCount = data.logs.length;
     const result = addLog({
       petId: activePet.id,
       medType,
@@ -158,6 +161,8 @@ export function InjectionLoggerModal({
       return;
     }
 
+    // Soft paywall after first real log — never blocks the save above.
+    entitlements?.maybeShowSoftPaywallAfterFirstLog(priorLogCount);
     onClose();
   };
 

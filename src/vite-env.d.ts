@@ -4,6 +4,12 @@ interface ImportMetaEnv {
   readonly VITE_SUPABASE_URL: string;
   readonly VITE_SUPABASE_ANON_KEY: string;
   readonly VITE_SKIP_AUTH: string;
+  /** Soft paywall + Pro gating UI. Default false (TestFlight free). */
+  readonly VITE_PAYWALL_ENABLED?: string;
+  /** Show founding $79 Pins+Pets bundle offer. Default false. */
+  readonly VITE_FOUNDING_LIFETIME?: string;
+  /** Mock StoreKit/Play purchase → local Pro. Dev/web only. Default false. */
+  readonly VITE_BILLING_MOCK?: string;
 }
 
 interface ImportMeta {

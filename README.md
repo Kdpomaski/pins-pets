@@ -41,6 +41,38 @@ Open [http://localhost:5173](http://localhost:5173)
 
 Copy `.env.example` to `.env` if you want Supabase login. In dev, auth is skipped when env vars are empty.
 
+
+## Freemium / Pro (stubs)
+
+Pins Pets ships freemium with optional Pro. Soft paywall only — **basic dose log and site rotation are never hard-blocked**. Free includes **1 pet**.
+
+Product ID stubs (do **not** create live IAP in App Store Connect / Play until Kevin money gate):
+
+| SKU | Product ID | Display |
+|---|---|---|
+| Monthly | `com.two20tech.pinspets.pro.monthly` | $5.99/mo |
+| Annual (primary) | `com.two20tech.pinspets.pro.yearly` | $49.99/yr |
+| Lifetime | `com.two20tech.pinspets.pro.lifetime` | TBD |
+| Bundle monthly | `com.two20tech.bundle.pro.monthly` | TBD |
+| Bundle yearly | `com.two20tech.bundle.pro.yearly` | TBD |
+| Bundle founding lifetime | `com.two20tech.bundle.pro.lifetime` | $79 (TestFlight) |
+
+### Cross-app bundle (Pins + Pins Pets)
+
+Purchase or restore in **either** app → local Pro flag → stub upsert to the signed-in **Supabase** account (`user_entitlements` / user metadata). The other app refreshes entitlement on launch / Restore / sign-in and unlocks Pro for both. Founding TF lifetime is the shared bundle SKU at **$79**.
+
+### Feature flags
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `VITE_PAYWALL_ENABLED` | `false` | Soft paywall + Pro gating UI |
+| `VITE_FOUNDING_LIFETIME` | `false` | Show founding bundle offer |
+| `VITE_BILLING_MOCK` | `false` | Mock purchase/restore → local Pro (dev only) |
+
+Website catalog deep links go to **https://www.220bioworx.com/products.html** only (RUO research materials). **No in-app peptide / pet-product checkout.**
+
+Decision: `/workspace/bus/decisions/2026-09-03-app-monetization.md`
+
 ## Disclaimer
 
 Pins Pets is a personal organization tool. It does not provide veterinary advice. Always consult a qualified veterinarian.
