@@ -44,13 +44,13 @@ Copy `.env.example` to `.env` if you want Supabase login. In dev, auth is skippe
 
 ## Freemium / Pro (stubs)
 
-Pins Pets ships freemium with optional Pro. Soft paywall only — **basic dose log and site rotation are never hard-blocked**. Free includes **1 pet**.
+Pins Pets ships freemium with optional Pro. Soft paywall only — **basic dose log and site rotation are never hard-blocked**. Free includes **1 pet**, **2 protocols**, and **full map history**.
 
 Product ID stubs (do **not** create live IAP in App Store Connect / Play until Kevin money gate):
 
 | SKU | Product ID | Display |
 |---|---|---|
-| Monthly | `com.two20tech.pinspets.pro.monthly` | $5.99/mo |
+| Monthly | `com.two20tech.pinspets.pro.monthly` | $4.99/mo |
 | Annual (primary) | `com.two20tech.pinspets.pro.yearly` | $49.99/yr |
 | Lifetime | `com.two20tech.pinspets.pro.lifetime` | TBD |
 | Bundle monthly | `com.two20tech.bundle.pro.monthly` | TBD |
@@ -69,7 +69,7 @@ Purchase or restore in **either** app → local Pro flag → stub upsert to the 
 | `VITE_FOUNDING_LIFETIME` | `false` | Show founding bundle offer |
 | `VITE_BILLING_MOCK` | `false` | Mock purchase/restore → local Pro (dev only) |
 
-Website catalog deep links go to **https://www.220bioworx.com/products.html** only (RUO research materials). **No in-app peptide / pet-product checkout.**
+**No in-app peptide / pet-product checkout.** Bioworx / website catalog CTAs are deferred (no SoftPaywall deep links for now).
 
 Decision: `/workspace/bus/decisions/2026-09-03-app-monetization.md`
 

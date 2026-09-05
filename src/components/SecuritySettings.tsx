@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { useEntitlementsOptional } from '@/lib/billing/entitlement-context';
 import {
   PAYWALL_COPY,
-  openResearchCatalog,
   restorePurchases,
 } from '@/lib/billing';
 
@@ -164,7 +163,7 @@ export function SecuritySettings({ open, onClose }: SecuritySettingsProps) {
                 <p className="text-xs text-muted-foreground">
                   {entitlements?.isPro
                     ? `You're on Pins Pets Pro${entitlements.entitlement.plan !== 'none' ? ` · ${entitlements.entitlement.plan}` : ''}.`
-                    : 'Free includes 1 pet and basic logging. Pro unlocks unlimited pets, history, and exports.'}
+                    : 'Free includes 1 pet, 2 protocols, and full map history. Pro unlocks unlimited pets, sync, and exports.'}
                 </p>
                 {!entitlements?.isPro && entitlements?.paywallEnabled && (
                   <Button
@@ -201,14 +200,6 @@ export function SecuritySettings({ open, onClose }: SecuritySettingsProps) {
                 >
                   {PAYWALL_COPY.restore}
                 </Button>
-                <Button
-                  variant="ghost"
-                  className="w-full"
-                  onClick={() => openResearchCatalog('browse_catalog')}
-                >
-                  {PAYWALL_COPY.browseCatalog}
-                </Button>
-                <p className="text-[11px] text-muted-foreground">{PAYWALL_COPY.browseCatalogHint}</p>
                 {billingMsg && <p className="text-xs text-muted-foreground">{billingMsg}</p>}
                 <p className="text-[10px] leading-relaxed text-muted-foreground">{PAYWALL_COPY.disclaimer}</p>
               </div>

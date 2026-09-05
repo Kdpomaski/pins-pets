@@ -5,14 +5,13 @@
 
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, ExternalLink, X } from 'lucide-react';
+import { Check, X } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import {
   BUNDLE_COPY,
   CONTEXT_COPY,
   PAYWALL_COPY,
   PRO_BULLETS,
-  openResearchCatalog,
   purchaseFoundingBundle,
   purchasePrimaryAnnual,
   purchaseProduct,
@@ -213,16 +212,6 @@ export function SoftPaywallModal() {
                 {contextual?.dismiss ?? PAYWALL_COPY.continueFree}
               </button>
             </div>
-
-            <button
-              type="button"
-              onClick={() => openResearchCatalog('paywall')}
-              className="w-full flex items-center justify-center gap-2 text-sm border border-border rounded-xl py-3 mb-3 text-foreground hover:bg-muted/40"
-            >
-              <ExternalLink size={14} />
-              {PAYWALL_COPY.browseCatalog}
-            </button>
-            <p className="text-[11px] text-muted-foreground mb-3">{PAYWALL_COPY.browseCatalogHint}</p>
 
             {message && (
               <p className="text-xs text-amber-700 dark:text-amber-300 mb-3" role="status">

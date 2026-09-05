@@ -45,8 +45,8 @@ export const PETS_PRODUCTS: ProductStub[] = [
   {
     id: PETS_PRODUCT_IDS.monthly,
     period: 'monthly',
-    displayPrice: '$5.99/mo',
-    priceUsd: 5.99,
+    displayPrice: '$4.99/mo',
+    priceUsd: 4.99,
     label: 'Monthly',
     scope: 'pinspets',
   },
@@ -131,19 +131,19 @@ export type FeatureDef = {
 
 /**
  * Free vs Pro capability matrix (Pins Pets).
- * Free keeps: log / reminders / 1 pet / basic recon / basic rotation / local storage.
- * Pro unlocks: unlimited pets, full map history, export/PDF, cloud sync,
+ * Free keeps: log / reminders / 1 pet / 2 protocols / full map history / basic recon / basic rotation / local storage.
+ * Pro unlocks: unlimited pets/protocols, export/PDF, cloud sync,
  * advanced inventory, photos/labs/trends.
  */
 export const FEATURE_MATRIX: FeatureDef[] = [
   { id: 'log_doses', label: 'Log doses', tier: 'free' },
   { id: 'reminders', label: 'Reminders', tier: 'free' },
   { id: 'pets', label: 'Pets', tier: 'free', freeLimit: 1 },
-  { id: 'protocols', label: 'Protocols', tier: 'free', freeLimit: 1 },
+  { id: 'protocols', label: 'Protocols', tier: 'free', freeLimit: 2 },
   { id: 'basic_recon', label: 'Basic reconstitution calculator', tier: 'free' },
   { id: 'basic_site_rotation', label: 'Basic site rotation', tier: 'free' },
   { id: 'local_storage', label: 'Local encrypted storage', tier: 'free' },
-  { id: 'full_map_history', label: 'Full map history', tier: 'pro' },
+  { id: 'full_map_history', label: 'Full map history', tier: 'free' },
   { id: 'photos_labs_trends', label: 'Photos / labs / trends', tier: 'pro' },
   { id: 'cloud_sync', label: 'Cloud sync', tier: 'pro' },
   { id: 'export_pdf', label: 'Export / PDF', tier: 'pro' },
@@ -151,10 +151,10 @@ export const FEATURE_MATRIX: FeatureDef[] = [
 ];
 
 export const FREE_PET_LIMIT = 1;
-export const FREE_PROTOCOL_LIMIT = 1;
+export const FREE_PROTOCOL_LIMIT = 2;
 
 /** Free users see map history within this many days; Pro sees all. */
-export const FREE_MAP_HISTORY_DAYS = 14;
+export const FREE_MAP_HISTORY_DAYS = Number.POSITIVE_INFINITY;
 
 const ALWAYS_FREE: FeatureId[] = [
   'log_doses',
@@ -218,7 +218,7 @@ export function canAccessFeature(
     return {
       allowed: false,
       feature,
-      reason: `Free includes ${limit} protocol. Upgrade to Pro for unlimited protocols.`,
+      reason: `Free includes ${limit} protocols. Upgrade to Pro for unlimited protocols.`,
     };
   }
 
