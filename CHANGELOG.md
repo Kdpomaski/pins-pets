@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — export / Android back / bottom safe-area
+
+- Capacitor export uses Filesystem + Share for .ics and text (WebView download was a no-op)
+- SoftPaywall stays OFF by default; export is not gated when paywall flag is false
+- Android `backButton` handler (history back or exit)
+- Android bottom safe-area floor so BottomNav clears system nav / gesture bar
+- Keep Horse/Rabbit species, Bot Ross logo, and top safe-area scrollport
+- Android versionCode 4+; iOS CFBundleVersion / CURRENT_PROJECT_VERSION 5+
+
 ## Unreleased — safe-area, Horse/Rabbit, logo fringe
 
 - Respect safe-area insets with #root scrollport and 47px native top inset

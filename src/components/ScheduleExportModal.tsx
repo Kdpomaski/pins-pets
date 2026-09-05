@@ -12,6 +12,7 @@ import {
   type ExportRange,
 } from '@/lib/schedule-export';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 import { useEntitlementsOptional } from '@/lib/billing/entitlement-context';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -46,6 +47,7 @@ function defaultRange(formatType: ExportFormat): ExportRange {
 export function ScheduleExportModal({ open, onClose }: Props) {
   const { data, activePet } = usePinsStore();
   const entitlements = useEntitlementsOptional();
+  const { toast } = useToast();
   const petId = activePet?.id ?? null;
   const compounds = useMemo(() => allCompoundNames(data, petId), [data, petId]);
   const [formatType, setFormatType] = useState<ExportFormat>('calendar');
@@ -116,18 +118,30 @@ export function ScheduleExportModal({ open, onClose }: Props) {
   ];
   const presets = formatType === 'calendar' ? calendarPresets : logPresets;
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!rangeValid || selectedList.length === 0) return;
-    // Soft Pro gate for export / PDF — never hard-blocks when paywall flag is off.
-    if (entitlements && !entitlements.requirePro('export_pdf', { reason: 'export_locked' })) {
+    // SoftPaywall OFF (TestFlight free): never gate export. When ON, soft-prompt Pro.
+    if (
+      entitlements?.paywallEnabled &&
+      !entitlements.requirePro('export_pdf', { reason: 'export_locked' })
+    ) {
       return;
     }
-    exportSchedule(formatType, selectedList, data, {
-      range,
-      petId,
-      petName: activePet?.name,
-    });
-    onClose();
+    try {
+      await exportSchedule(formatType, selectedList, data, {
+        range,
+        petId,
+        petName: activePet?.name,
+      });
+      onClose();
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Export failed';
+      toast({
+        title: 'Export failed',
+        description: message,
+        variant: 'destructive',
+      });
+    }
   };
 
   return (

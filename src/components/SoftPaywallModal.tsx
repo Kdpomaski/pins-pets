@@ -39,13 +39,14 @@ function reasonCopy(reason: PaywallReason) {
 
 export function SoftPaywallModal() {
   const { user } = useAuth();
-  const { paywallOpen, paywallReason, closePaywall, refresh, isPro } = useEntitlements();
+  const { paywallOpen, paywallReason, closePaywall, refresh, isPro, paywallEnabled } = useEntitlements();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const showFounding = isFoundingLifetimeEnabled();
   const contextual = reasonCopy(paywallReason);
 
-  if (isPro) return null;
+  // SoftPaywall OFF — never mount paywall chrome (TestFlight / free ship).
+  if (!paywallEnabled || isPro) return null;
 
   const run = async (fn: () => Promise<void>) => {
     setBusy(true);
