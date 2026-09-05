@@ -5,6 +5,7 @@ import { X, Check, MapPin, Clock } from "lucide-react";
 import { usePinsStore, inventoryForPet, type DoseUnit, type MedType, type InventoryItem } from "@/lib/store";
 import { SPECIES_SITES, siteLabel } from "@/lib/body-map-data";
 import { useEntitlementsOptional } from "@/lib/billing/entitlement-context";
+import { doseVolumeMl } from "@/lib/dose-volume";
 
 type InjectionLoggerModalProps = {
   isOpen: boolean;
@@ -170,6 +171,14 @@ export function InjectionLoggerModal({
     activePet && compound && dose && (!needsSite(medType) || siteId),
   );
 
+  const selectedItem = petInventory.find((item) => item.name === compound);
+  const drawnVolume = doseVolumeMl({
+    dose: dose ? Number(dose) : undefined,
+    doseUnit: unit,
+    concentration: selectedItem?.concentration,
+    concentrationUnit: selectedItem?.unit ?? unit,
+  });
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -214,6 +223,7 @@ export function InjectionLoggerModal({
               </div>
               <button
                 onClick={onClose}
+                data-pins-overlay-dismiss
                 className="p-3 text-foreground bg-secondary/60 rounded-full shrink-0"
                 aria-label="Close"
               >
@@ -311,6 +321,20 @@ export function InjectionLoggerModal({
                       <option value="pump">pump</option>
                     </select>
                   </div>
+                  {(selectedItem?.frequency || drawnVolume) && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {selectedItem?.frequency ? (
+                        <span className="text-xs text-muted-foreground bg-background/60 border border-border rounded-full px-3 py-1">
+                          {selectedItem.frequency}
+                        </span>
+                      ) : null}
+                      {drawnVolume ? (
+                        <span className="text-xs text-muted-foreground bg-background/60 border border-border rounded-full px-3 py-1">
+                          {drawnVolume.label}
+                        </span>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
 
                 <div>

@@ -1,11 +1,21 @@
 import { useState } from "react";
 import { Calculator as CalcIcon, FlaskConical, Syringe, PawPrint } from "lucide-react";
 import { usePinsStore } from "@/lib/store";
+import {
+  formatWeightNumber,
+  fromKg,
+  parseWeightToKg,
+  type WeightUnit,
+} from "@/lib/weight";
 
 export default function Calculator() {
   const { activePet } = usePinsStore();
   const [mgPerKg, setMgPerKg] = useState("5");
-  const [weightKg, setWeightKg] = useState(activePet?.weightKg ? String(activePet.weightKg) : "10");
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>(activePet?.weightUnit ?? "kg");
+  const [weightDraft, setWeightDraft] = useState(() => {
+    if (!activePet?.weightKg) return "10";
+    return formatWeightNumber(fromKg(activePet.weightKg, activePet.weightUnit ?? "kg"));
+  });
   const [vialQuantity, setVialQuantity] = useState("5");
   const [vialUnit, setVialUnit] = useState<"mg" | "mcg">("mg");
   
@@ -15,6 +25,7 @@ export default function Calculator() {
   const [desiredUnit, setDesiredUnit] = useState<"mg" | "mcg">("mcg");
 
   const [syringeSize, setSyringeSize] = useState("100"); // 100 IU = 1ml (U-100)
+  const weightKgForCalc = parseWeightToKg(weightDraft, weightUnit);
 
   // Calculate
   const calculate = () => {
@@ -198,20 +209,54 @@ export default function Calculator() {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">Weight (kg)</label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-xs font-medium text-muted-foreground">Weight</label>
+                <div
+                  role="radiogroup"
+                  aria-label="Weight unit"
+                  className="inline-flex rounded-full border border-border overflow-hidden"
+                >
+                  {(["lb", "kg"] as const).map((option) => {
+                    const selected = weightUnit === option;
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => {
+                          const kg = parseWeightToKg(weightDraft, weightUnit);
+                          setWeightUnit(option);
+                          if (kg != null) setWeightDraft(formatWeightNumber(fromKg(kg, option)));
+                        }}
+                        className={`px-2.5 py-0.5 text-xs font-semibold ${
+                          selected
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-background text-muted-foreground hover:text-foreground"
+                        }`}
+                      >
+                        {option}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <input
                 type="number"
-                value={weightKg}
-                onChange={(e) => setWeightKg(e.target.value)}
+                value={weightDraft}
+                onChange={(e) => setWeightDraft(e.target.value)}
                 className="w-full bg-input/30 border border-border rounded-lg p-3 outline-none"
               />
             </div>
           </div>
-          {Number(mgPerKg) > 0 && Number(weightKg) > 0 && (
+          {Number(mgPerKg) > 0 && weightKgForCalc != null && (
             <div className="rounded-xl bg-primary/10 border border-border p-4">
               <p className="text-xs uppercase tracking-wider text-muted-foreground">Total dose</p>
               <p className="text-3xl font-mono font-bold mt-1">
-                {(Number(mgPerKg) * Number(weightKg)).toFixed(2)} mg
+                {(Number(mgPerKg) * weightKgForCalc).toFixed(2)} mg
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Uses {formatWeightNumber(weightKgForCalc)} kg for mg/kg
               </p>
             </div>
           )}

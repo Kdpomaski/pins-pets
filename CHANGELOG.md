@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — tester: weight units, Android back exit, dose volume chips
+
+- Pets enter/edit/display weight in lb or kg; stored value stays `weightKg` (lb converted on save)
+- mg/kg calculator always uses kilograms
+- Android system back exits at SPA root (do not use `history.length` / `canGoBack`); pops in-app history; closes overlays
+- Inventory + Body Map / log dose show calculated draw volume next to frequency-dose when concentration + dose exist
+- SoftPaywall stays OFF (`VITE_PAYWALL_ENABLED` default false)
+- iOS `CURRENT_PROJECT_VERSION` 6; Android `versionCode` 5
+
 ## Unreleased — export / Android back / bottom safe-area
 
 - Capacitor export uses Filesystem + Share for .ics and text (WebView download was a no-op)

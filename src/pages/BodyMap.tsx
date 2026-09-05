@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { usePinsStore, inventoryForPet, type InventoryItem } from "@/lib/store";
 import { MAP_IMAGES, sitesFor, type MapView } from "@/lib/body-map-data";
 import { PetSwitcher, PinsPetsHeader } from "@/components/Brand";
+import { ProtocolChips } from "@/components/ProtocolChips";
 
 interface InjectionLog {
   id: string;
@@ -138,6 +139,16 @@ const BodyMap: React.FC<{
                 );
               })}
             </div>
+            {selectedCompound && (
+              <ProtocolChips
+                frequency={selectedCompound.frequency}
+                dose={selectedCompound.defaultDose}
+                doseUnit={selectedCompound.unit}
+                concentration={selectedCompound.concentration}
+                concentrationUnit={selectedCompound.unit}
+                className="mt-3 flex flex-wrap items-center gap-2"
+              />
+            )}
           </aside>
 
           <div className="flex-1 min-w-0">

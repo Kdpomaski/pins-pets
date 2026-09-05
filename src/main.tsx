@@ -1,9 +1,9 @@
 import { createRoot } from 'react-dom/client';
 import { Capacitor } from '@capacitor/core';
-import { App as CapApp } from '@capacitor/app';
 
 import App from './App';
 import { assertNoTelemetry } from '@/lib/privacy';
+import { ensureAndroidBackButton } from '@/lib/native-back';
 
 import './index.css';
 
@@ -25,14 +25,7 @@ if (Capacitor.isNativePlatform()) {
     );
   }
 
-  // Hardware / gesture back: pop history when possible, else leave the app.
-  void CapApp.addListener('backButton', ({ canGoBack }) => {
-    if (canGoBack || window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-    void CapApp.exitApp();
-  });
+  ensureAndroidBackButton();
 }
 
 createRoot(document.getElementById('root')!).render(<App />);
