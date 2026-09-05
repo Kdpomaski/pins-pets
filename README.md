@@ -1,6 +1,6 @@
 # Pins Pets
 
-**Pet medication & injection tracker** — a clone of [Pins](https://github.com/Kdpomaski/Pins-App) rebuilt for dogs, cats, and other pets.
+**Pet medication & injection tracker** — a clone of [Pins](https://github.com/Kdpomaski/Pins-App) rebuilt for dogs, cats, horses, rabbits, and other pets.
 
 **Live app:** https://kdpomaski.github.io/pins-pets/
 
@@ -11,7 +11,7 @@ Local-first, privacy-focused visual tracker for injections, oral meds, insulin, 
 ## Features
 
 - **Multi-pet profiles** — name, species, breed, weight, sex
-- **Species body maps** — dog, cat, and generic pet (side + top views); tap a site to log
+- **Species body maps** — dog, cat, horse, rabbit, and generic pet (side + top views); tap a site to log
 - **Everyday vet meds** — injections, oral chews/tablets, insulin, vaccines, flea/tick topicals
 - **Inventory** — vials, chews, tablets, insulin, remaining quantity
 - **Schedule** — weekly dose calendar with export

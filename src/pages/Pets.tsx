@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { usePinsStore, type Pet } from "@/lib/store";
-import { SPECIES_LABELS, type Species } from "@/lib/body-map-data";
+import { MAP_IMAGES, SPECIES_LABELS, SPECIES_OPTIONS, type Species } from "@/lib/body-map-data";
 import { PinsPetsHeader, PetSwitcher } from "@/components/Brand";
 import { useEntitlementsOptional } from "@/lib/billing/entitlement-context";
 
@@ -139,15 +139,34 @@ export default function Pets() {
               placeholder="Name"
               className="w-full bg-input/50 border border-border rounded-lg p-3"
             />
-            <select
-              value={species}
-              onChange={(e) => setSpecies(e.target.value as Species)}
-              className="w-full bg-input/50 border border-border rounded-lg p-3"
-            >
-              <option value="dog">Dog</option>
-              <option value="cat">Cat</option>
-              <option value="other">Other pet</option>
-            </select>
+            <div role="radiogroup" aria-label="Pet type" className="grid grid-cols-3 gap-2">
+              {SPECIES_OPTIONS.map((id) => {
+                const selected = species === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => setSpecies(id)}
+                    className={`rounded-xl border p-2 text-center transition-colors ${
+                      selected
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-background hover:border-primary/50"
+                    }`}
+                  >
+                    <img
+                      src={MAP_IMAGES[id].side}
+                      alt=""
+                      className="h-12 w-full object-contain bg-black rounded-lg"
+                    />
+                    <span className="mt-1.5 block text-xs font-semibold leading-tight">
+                      {SPECIES_LABELS[id]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
             <input
               value={breed}
               onChange={(e) => setBreed(e.target.value)}

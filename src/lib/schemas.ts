@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const speciesSchema = z.enum(["dog", "cat", "other"]);
+export const speciesSchema = z.enum(["dog", "cat", "horse", "rabbit", "other"]);
 export const medTypeSchema = z.enum([
   "injection",
   "oral",

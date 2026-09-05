@@ -21,7 +21,7 @@ Track pet meds, injections, and schedules privately on your device.
 
 ## Full description
 
-Pins Pets is a local-first tracker for dogs, cats, and other pets. Log insulin, oral meds, vaccines, topicals, and injections on species body maps. Inventory and schedules stay encrypted on your phone.
+Pins Pets is a local-first tracker for dogs, cats, horses, rabbits, and other pets. Log insulin, oral meds, vaccines, topicals, and injections on species body maps. Inventory and schedules stay encrypted on your phone.
 
 Pins Pets is a personal organization tool. It is not a veterinary device and does not replace a veterinarian.
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased — safe-area, Horse/Rabbit, logo fringe
+
+- Respect safe-area insets with #root scrollport and 47px native top inset
+- Horse and Rabbit selectable pet types with side and top body-map silhouettes
+- Bot Ross cleaned logo ingest for store/in-app/iOS icons without white fringe
+
 ## Unreleased — freemium Pro paywall stubs
 
 - Add StoreKit 2 / Play Billing product ID stubs + soft paywall behind `VITE_PAYWALL_ENABLED` (default false)
