@@ -3,11 +3,13 @@ import { Plus, Trash2 } from "lucide-react";
 import { usePinsStore, type Pet } from "@/lib/store";
 import { SPECIES_LABELS, type Species } from "@/lib/body-map-data";
 import { PinsPetsHeader, PetSwitcher } from "@/components/Brand";
+import { useEntitlementsOptional } from "@/lib/billing/entitlement-context";
 
 const COLORS = ["#d97706", "#64748b", "#3b82f6", "#10b981", "#8b5cf6", "#ec4899", "#ef4444"];
 
 export default function Pets() {
   const { data, activePet, addPet, updatePet, deletePet, setActivePet } = usePinsStore();
+  const entitlements = useEntitlementsOptional();
   const [adding, setAdding] = useState(data.pets.length === 0);
   const [name, setName] = useState("");
   const [species, setSpecies] = useState<Species>("dog");
@@ -18,6 +20,11 @@ export default function Pets() {
   const [error, setError] = useState("");
 
   const handleAdd = () => {
+    const petCount = entitlements?.petCountFromData(data) ?? data.pets.length;
+    if (entitlements && !entitlements.requirePro("pets", { petCount, reason: "second_pet" })) {
+      setAdding(false);
+      return;
+    }
     const weight = weightKg ? Number(weightKg) : undefined;
     const result = addPet({
       name: name.trim(),
@@ -49,7 +56,14 @@ export default function Pets() {
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold tracking-tight">Pets</h1>
           <button
-            onClick={() => setAdding(true)}
+            onClick={() => {
+              const petCount = entitlements?.petCountFromData(data) ?? data.pets.length;
+              // Soft gate when already at free limit (1 pet). Never hard-block existing pet.
+              if (entitlements && !entitlements.requirePro("pets", { petCount, reason: "second_pet" })) {
+                return;
+              }
+              setAdding(true);
+            }}
             className="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center"
             aria-label="Add pet"
           >

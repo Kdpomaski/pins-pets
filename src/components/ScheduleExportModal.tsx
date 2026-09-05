@@ -12,6 +12,7 @@ import {
   type ExportRange,
 } from '@/lib/schedule-export';
 import { Button } from '@/components/ui/button';
+import { useEntitlementsOptional } from '@/lib/billing/entitlement-context';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
@@ -44,6 +45,7 @@ function defaultRange(formatType: ExportFormat): ExportRange {
 
 export function ScheduleExportModal({ open, onClose }: Props) {
   const { data, activePet } = usePinsStore();
+  const entitlements = useEntitlementsOptional();
   const petId = activePet?.id ?? null;
   const compounds = useMemo(() => allCompoundNames(data, petId), [data, petId]);
   const [formatType, setFormatType] = useState<ExportFormat>('calendar');
@@ -116,6 +118,10 @@ export function ScheduleExportModal({ open, onClose }: Props) {
 
   const handleExport = () => {
     if (!rangeValid || selectedList.length === 0) return;
+    // Soft Pro gate for export / PDF — never hard-blocks when paywall flag is off.
+    if (entitlements && !entitlements.requirePro('export_pdf', { reason: 'export_locked' })) {
+      return;
+    }
     exportSchedule(formatType, selectedList, data, {
       range,
       petId,

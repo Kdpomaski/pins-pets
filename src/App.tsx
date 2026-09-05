@@ -19,6 +19,8 @@ import AuthCallback from '@/pages/AuthCallback';
 import { AuthProvider } from '@/lib/auth-context';
 import { PinsProvider, usePinsStore } from '@/lib/store';
 import { SecurityProvider } from '@/lib/security-context';
+import { EntitlementProvider } from '@/lib/billing/entitlement-context';
+import { SoftPaywallModal } from '@/components/SoftPaywallModal';
 
 function BodyMapRoute({
   handleOpenLogger,
@@ -102,7 +104,10 @@ function AppRoutes() {
           <SecurityProvider>
             <SecurityGate>
               <PinsProvider>
-                <AppShell />
+                <EntitlementProvider>
+                  <AppShell />
+                  <SoftPaywallModal />
+                </EntitlementProvider>
               </PinsProvider>
             </SecurityGate>
           </SecurityProvider>
