@@ -3,7 +3,7 @@ import { Capacitor } from "@capacitor/core";
 
 /**
  * Capacitor WebView history.length is typically already > 1 on first paint
- * (about:blank ? app URL, splash, or plugin bootstrap). The App plugin's
+ * (about:blank then app URL, splash, or plugin bootstrap). The App plugin's
  * canGoBack maps to WebView.canGoBack() and is often true for the same reason.
  * Neither is a reliable "are we at the SPA root?" signal — using them as
  * `canGoBack || history.length > 1` makes Back call history.back() forever
@@ -43,7 +43,7 @@ function dismissOpenOverlay(): boolean {
   return false;
 }
 
-/** Overlay ? close. In-app history ? pop. SPA root ? leave the app. */
+/** Overlay: close. In-app history: pop. SPA root: leave the app. */
 export function ensureAndroidBackButton(): void {
   if (Capacitor.getPlatform() !== "android") return;
 

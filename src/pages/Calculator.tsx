@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Calculator as CalcIcon, FlaskConical, Syringe, PawPrint } from "lucide-react";
 import { usePinsStore } from "@/lib/store";
+import { WeightUnitToggle } from "@/components/WeightUnitToggle";
 import {
   formatWeightNumber,
   fromKg,
@@ -211,35 +212,14 @@ export default function Calculator() {
             <div className="space-y-2">
               <div className="flex items-center justify-between gap-2">
                 <label className="text-xs font-medium text-muted-foreground">Weight</label>
-                <div
-                  role="radiogroup"
-                  aria-label="Weight unit"
-                  className="inline-flex rounded-full border border-border overflow-hidden"
-                >
-                  {(["lb", "kg"] as const).map((option) => {
-                    const selected = weightUnit === option;
-                    return (
-                      <button
-                        key={option}
-                        type="button"
-                        role="radio"
-                        aria-checked={selected}
-                        onClick={() => {
-                          const kg = parseWeightToKg(weightDraft, weightUnit);
-                          setWeightUnit(option);
-                          if (kg != null) setWeightDraft(formatWeightNumber(fromKg(kg, option)));
-                        }}
-                        className={`px-2.5 py-0.5 text-xs font-semibold ${
-                          selected
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-background text-muted-foreground hover:text-foreground"
-                        }`}
-                      >
-                        {option}
-                      </button>
-                    );
-                  })}
-                </div>
+                <WeightUnitToggle
+                  unit={weightUnit}
+                  onChange={(option) => {
+                    const kg = parseWeightToKg(weightDraft, weightUnit);
+                    setWeightUnit(option);
+                    if (kg != null) setWeightDraft(formatWeightNumber(fromKg(kg, option)));
+                  }}
+                />
               </div>
               <input
                 type="number"

@@ -3,6 +3,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { usePinsStore, type Pet } from "@/lib/store";
 import { MAP_IMAGES, SPECIES_LABELS, SPECIES_OPTIONS, type Species } from "@/lib/body-map-data";
 import { PinsPetsHeader, PetSwitcher } from "@/components/Brand";
+import { WeightUnitToggle } from "@/components/WeightUnitToggle";
 import { useEntitlementsOptional } from "@/lib/billing/entitlement-context";
 import {
   formatWeightDisplay,
@@ -13,42 +14,6 @@ import {
 } from "@/lib/weight";
 
 const COLORS = ["#d97706", "#64748b", "#3b82f6", "#10b981", "#8b5cf6", "#ec4899", "#ef4444"];
-
-function WeightUnitToggle({
-  unit,
-  onChange,
-}: {
-  unit: WeightUnit;
-  onChange: (unit: WeightUnit) => void;
-}) {
-  return (
-    <div
-      role="radiogroup"
-      aria-label="Weight unit"
-      className="inline-flex rounded-full border border-border overflow-hidden"
-    >
-      {(["lb", "kg"] as const).map((option) => {
-        const selected = unit === option;
-        return (
-          <button
-            key={option}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            onClick={() => onChange(option)}
-            className={`px-2.5 py-0.5 text-xs font-semibold ${
-              selected
-                ? "bg-primary text-primary-foreground"
-                : "bg-background text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {option}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 function PetWeightEditor({ pet }: { pet: Pet }) {
   const { updatePet } = usePinsStore();
