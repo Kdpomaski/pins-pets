@@ -1,29 +1,92 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { usePinsStore, type Pet } from "@/lib/store";
-import { SPECIES_LABELS, type Species } from "@/lib/body-map-data";
+import { MAP_IMAGES, SPECIES_LABELS, SPECIES_OPTIONS, type Species } from "@/lib/body-map-data";
 import { PinsPetsHeader, PetSwitcher } from "@/components/Brand";
+import { WeightUnitToggle } from "@/components/WeightUnitToggle";
+import { useEntitlementsOptional } from "@/lib/billing/entitlement-context";
+import {
+  formatWeightDisplay,
+  formatWeightNumber,
+  fromKg,
+  parseWeightToKg,
+  type WeightUnit,
+} from "@/lib/weight";
 
 const COLORS = ["#d97706", "#64748b", "#3b82f6", "#10b981", "#8b5cf6", "#ec4899", "#ef4444"];
 
+function PetWeightEditor({ pet }: { pet: Pet }) {
+  const { updatePet } = usePinsStore();
+  const unit: WeightUnit = pet.weightUnit ?? "kg";
+  const [draft, setDraft] = useState(() =>
+    pet.weightKg != null ? formatWeightNumber(fromKg(pet.weightKg, unit)) : "",
+  );
+
+  useEffect(() => {
+    setDraft(pet.weightKg != null ? formatWeightNumber(fromKg(pet.weightKg, unit)) : "");
+  }, [pet.weightKg, unit]);
+
+  const commit = (raw: string, nextUnit: WeightUnit) => {
+    updatePet(pet.id, {
+      weightKg: parseWeightToKg(raw, nextUnit),
+      weightUnit: nextUnit,
+    });
+  };
+
+  return (
+    <label className="mt-3 block text-xs text-muted-foreground">
+      <span className="flex items-center justify-between gap-2">
+        Weight
+        <WeightUnitToggle
+          unit={unit}
+          onChange={(next) => {
+            // Keep stored kg; only change how it is shown/edited.
+            updatePet(pet.id, { weightUnit: next, weightKg: pet.weightKg });
+          }}
+        />
+      </span>
+      <input
+        type="number"
+        step="any"
+        inputMode="decimal"
+        value={draft}
+        placeholder={unit === "lb" ? "Weight in lb" : "Weight in kg"}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={() => commit(draft, unit)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commit(draft, unit);
+        }}
+        className="mt-1 w-full bg-input/50 border border-border rounded-lg p-2 text-sm text-foreground"
+      />
+    </label>
+  );
+}
+
 export default function Pets() {
-  const { data, activePet, addPet, updatePet, deletePet, setActivePet } = usePinsStore();
+  const { data, activePet, addPet, deletePet, setActivePet } = usePinsStore();
+  const entitlements = useEntitlementsOptional();
   const [adding, setAdding] = useState(data.pets.length === 0);
   const [name, setName] = useState("");
   const [species, setSpecies] = useState<Species>("dog");
   const [breed, setBreed] = useState("");
-  const [weightKg, setWeightKg] = useState("");
+  const [weightDraft, setWeightDraft] = useState("");
+  const [weightUnit, setWeightUnit] = useState<WeightUnit>("kg");
   const [sex, setSex] = useState<Pet["sex"]>("unknown");
   const [color, setColor] = useState(COLORS[0]);
   const [error, setError] = useState("");
 
   const handleAdd = () => {
-    const weight = weightKg ? Number(weightKg) : undefined;
+    const petCount = entitlements?.petCountFromData(data) ?? data.pets.length;
+    if (entitlements && !entitlements.requirePro("pets", { petCount, reason: "second_pet" })) {
+      setAdding(false);
+      return;
+    }
     const result = addPet({
       name: name.trim(),
       species,
       breed: breed.trim() || undefined,
-      weightKg: weight && Number.isFinite(weight) ? weight : undefined,
+      weightKg: parseWeightToKg(weightDraft, weightUnit),
+      weightUnit,
       sex,
       color,
     });
@@ -33,7 +96,7 @@ export default function Pets() {
     }
     setName("");
     setBreed("");
-    setWeightKg("");
+    setWeightDraft("");
     setError("");
     setAdding(false);
   };
@@ -49,7 +112,14 @@ export default function Pets() {
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold tracking-tight">Pets</h1>
           <button
-            onClick={() => setAdding(true)}
+            onClick={() => {
+              const petCount = entitlements?.petCountFromData(data) ?? data.pets.length;
+              // Soft gate when already at free limit (1 pet). Never hard-block existing pet.
+              if (entitlements && !entitlements.requirePro("pets", { petCount, reason: "second_pet" })) {
+                return;
+              }
+              setAdding(true);
+            }}
             className="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center"
             aria-label="Add pet"
           >
@@ -81,7 +151,9 @@ export default function Pets() {
                   <p className="text-sm text-muted-foreground mt-1">
                     {SPECIES_LABELS[pet.species]}
                     {pet.breed ? ` · ${pet.breed}` : ""}
-                    {pet.weightKg ? ` · ${pet.weightKg} kg` : ""}
+                    {pet.weightKg
+                      ? ` · ${formatWeightDisplay(pet.weightKg, pet.weightUnit ?? "kg")}`
+                      : ""}
                   </p>
                 </button>
                 <button
@@ -97,21 +169,7 @@ export default function Pets() {
                   <Trash2 size={16} />
                 </button>
               </div>
-              <label className="mt-3 block text-xs text-muted-foreground">
-                Weight (kg)
-                <input
-                  type="number"
-                  step="any"
-                  value={pet.weightKg ?? ""}
-                  onChange={(e) => {
-                    const val = Number(e.target.value);
-                    updatePet(pet.id, {
-                      weightKg: Number.isFinite(val) && val > 0 ? val : undefined,
-                    });
-                  }}
-                  className="mt-1 w-full bg-input/50 border border-border rounded-lg p-2 text-sm text-foreground"
-                />
-              </label>
+              <PetWeightEditor pet={pet} />
             </div>
           ))}
         </div>
@@ -125,29 +183,55 @@ export default function Pets() {
               placeholder="Name"
               className="w-full bg-input/50 border border-border rounded-lg p-3"
             />
-            <select
-              value={species}
-              onChange={(e) => setSpecies(e.target.value as Species)}
-              className="w-full bg-input/50 border border-border rounded-lg p-3"
-            >
-              <option value="dog">Dog</option>
-              <option value="cat">Cat</option>
-              <option value="other">Other pet</option>
-            </select>
+            <div role="radiogroup" aria-label="Pet type" className="grid grid-cols-3 gap-2">
+              {SPECIES_OPTIONS.map((id) => {
+                const selected = species === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => setSpecies(id)}
+                    className={`rounded-xl border p-2 text-center transition-colors ${
+                      selected
+                        ? "border-primary bg-primary/10"
+                        : "border-border bg-background hover:border-primary/50"
+                    }`}
+                  >
+                    <img
+                      src={MAP_IMAGES[id].side}
+                      alt=""
+                      className="h-12 w-full object-contain bg-black rounded-lg"
+                    />
+                    <span className="mt-1.5 block text-xs font-semibold leading-tight">
+                      {SPECIES_LABELS[id]}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
             <input
               value={breed}
               onChange={(e) => setBreed(e.target.value)}
               placeholder="Breed (optional)"
               className="w-full bg-input/50 border border-border rounded-lg p-3"
             />
-            <input
-              value={weightKg}
-              onChange={(e) => setWeightKg(e.target.value)}
-              placeholder="Weight in kg (optional)"
-              type="number"
-              step="any"
-              className="w-full bg-input/50 border border-border rounded-lg p-3"
-            />
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-muted-foreground">Weight (optional)</label>
+                <WeightUnitToggle unit={weightUnit} onChange={setWeightUnit} />
+              </div>
+              <input
+                value={weightDraft}
+                onChange={(e) => setWeightDraft(e.target.value)}
+                placeholder={weightUnit === "lb" ? "Weight in lb" : "Weight in kg"}
+                type="number"
+                step="any"
+                inputMode="decimal"
+                className="w-full bg-input/50 border border-border rounded-lg p-3"
+              />
+            </div>
             <select
               value={sex}
               onChange={(e) => setSex(e.target.value as Pet["sex"])}

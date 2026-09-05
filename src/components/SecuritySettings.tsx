@@ -5,6 +5,11 @@ import { useAuth } from '@/lib/auth-context';
 import { useSecurity } from '@/lib/security-context';
 import { PRIVACY } from '@/lib/privacy';
 import { Button } from '@/components/ui/button';
+import { useEntitlementsOptional } from '@/lib/billing/entitlement-context';
+import {
+  PAYWALL_COPY,
+  restorePurchases,
+} from '@/lib/billing';
 
 type SecuritySettingsProps = {
   open: boolean;
@@ -25,10 +30,12 @@ export function SecurityBadge() {
 export function SecuritySettings({ open, onClose }: SecuritySettingsProps) {
   const { user, signOut } = useAuth();
   const { encryptionMode, enablePassphrase, lock } = useSecurity();
+  const entitlements = useEntitlementsOptional();
   const [passphrase, setPassphrase] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [billingMsg, setBillingMsg] = useState('');
 
   const resetForm = () => {
     setPassphrase('');
@@ -150,6 +157,52 @@ export function SecuritySettings({ open, onClose }: SecuritySettingsProps) {
                   </Button>
                 </div>
               )}
+
+              <div className="rounded-xl border border-border bg-background/50 p-4 space-y-3">
+                <p className="font-medium">Pins Pets Pro</p>
+                <p className="text-xs text-muted-foreground">
+                  {entitlements?.isPro
+                    ? `You're on Pins Pets Pro${entitlements.entitlement.plan !== 'none' ? ` · ${entitlements.entitlement.plan}` : ''}.`
+                    : 'Free includes 1 pet, 2 protocols, and full map history. Pro unlocks unlimited pets, sync, and exports.'}
+                </p>
+                {!entitlements?.isPro && entitlements?.paywallEnabled && (
+                  <Button
+                    className="w-full"
+                    variant="default"
+                    onClick={() => entitlements.openPaywall('manual')}
+                  >
+                    See Pro plans
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  disabled={loading}
+                  onClick={() => {
+                    void (async () => {
+                      setLoading(true);
+                      setBillingMsg('');
+                      try {
+                        const result = await restorePurchases({ userId: user?.id });
+                        if (!result.ok) {
+                          setBillingMsg(result.error);
+                        } else if (result.restored) {
+                          setBillingMsg('Purchases restored.');
+                          await entitlements?.refresh();
+                        } else {
+                          setBillingMsg('No purchases to restore.');
+                        }
+                      } finally {
+                        setLoading(false);
+                      }
+                    })();
+                  }}
+                >
+                  {PAYWALL_COPY.restore}
+                </Button>
+                {billingMsg && <p className="text-xs text-muted-foreground">{billingMsg}</p>}
+                <p className="text-[10px] leading-relaxed text-muted-foreground">{PAYWALL_COPY.disclaimer}</p>
+              </div>
 
               <Button
                 variant="outline"

@@ -25,6 +25,7 @@ import {
   scheduleForRemainingInventory,
 } from "@/lib/inventory-vials";
 import type { Species } from "@/lib/body-map-data";
+import type { WeightUnit } from "@/lib/weight";
 
 export type MedType = "injection" | "oral" | "topical" | "vaccine" | "insulin" | "other";
 export type MedForm = "vial" | "tablet" | "chew" | "topical" | "insulin" | "vaccine" | "liquid";
@@ -36,6 +37,8 @@ export type Pet = {
   species: Species;
   breed?: string;
   weightKg?: number;
+  /** Preferred enter/display unit. Stored mass remains weightKg. */
+  weightUnit?: WeightUnit;
   sex?: "male" | "female" | "unknown";
   birthdate?: string;
   color: string;

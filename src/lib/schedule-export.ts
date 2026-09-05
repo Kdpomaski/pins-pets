@@ -34,6 +34,33 @@ function downloadBlob(content: string, filename: string, mime: string) {
   URL.revokeObjectURL(url);
 }
 
+/** Capacitor WebView: <a download> is a no-op — write + share the file instead. */
+async function shareOrDownload(content: string, filename: string, mime: string): Promise<void> {
+  const { Capacitor } = await import('@capacitor/core');
+  if (!Capacitor.isNativePlatform()) {
+    downloadBlob(content, filename, mime);
+    return;
+  }
+
+  const [{ Filesystem, Directory, Encoding }, { Share }] = await Promise.all([
+    import('@capacitor/filesystem'),
+    import('@capacitor/share'),
+  ]);
+
+  const written = await Filesystem.writeFile({
+    path: filename,
+    data: content,
+    directory: Directory.Cache,
+    encoding: Encoding.UTF8,
+  });
+
+  await Share.share({
+    title: filename,
+    url: written.uri,
+    dialogTitle: 'Export schedule',
+  });
+}
+
 function applyTime(date: Date, time: string): Date {
   const [h, m] = time.split(':').map(Number);
   return setMinutes(setHours(startOfDay(date), h || 8), m || 0);
@@ -255,12 +282,12 @@ export function buildAdministrationText(compounds: string[], data: PinsData, opt
   return [...header, ...body].join('\n');
 }
 
-export function exportSchedule(
+export async function exportSchedule(
   formatType: ExportFormat,
   compounds: string[],
   data: PinsData,
   options: ExportOptions,
-) {
+): Promise<void> {
   if (compounds.length === 0) return;
 
   const fromStamp = format(options.range.from, 'yyyy-MM-dd');
@@ -268,7 +295,7 @@ export function exportSchedule(
   const petStamp = options.petName ? `-${options.petName.toLowerCase().replace(/\s+/g, '-')}` : '';
 
   if (formatType === 'calendar') {
-    downloadBlob(
+    await shareOrDownload(
       buildIcsCalendar(compounds, data, options),
       `pins-pets-schedule${petStamp}-${fromStamp}-to-${toStamp}.ics`,
       'text/calendar;charset=utf-8',
@@ -276,7 +303,7 @@ export function exportSchedule(
     return;
   }
 
-  downloadBlob(
+  await shareOrDownload(
     buildAdministrationText(compounds, data, options),
     `pins-pets-admin-log${petStamp}-${fromStamp}-to-${toStamp}.txt`,
     'text/plain;charset=utf-8',

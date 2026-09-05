@@ -1,7 +1,7 @@
 import { Link } from "wouter";
 import { PawPrint } from "lucide-react";
 import { usePinsStore } from "@/lib/store";
-import { SPECIES_LABELS } from "@/lib/body-map-data";
+import { speciesLabel } from "@/lib/body-map-data";
 
 /** Same Pins “P” (stem, bowl, needle, orange tip), drawn in the original 40×46 space. */
 function PinsLetter() {
@@ -16,9 +16,38 @@ function PinsLetter() {
   );
 }
 
+/** In-app mark. Uses Bot Ross `public/pins-pets-logo.png` when ingest has copied it. */
 export function PinsPetsLogoIcon({ size = 36 }: { size?: number }) {
+  const png = `${import.meta.env.BASE_URL}pins-pets-logo.png`;
   return (
-    <svg width={size} height={size} viewBox="0 0 40 50" fill="none" aria-hidden="true">
+    <span className="inline-flex shrink-0" style={{ width: size, height: size }}>
+      <img
+        src={png}
+        width={size}
+        height={size}
+        alt=""
+        className="object-contain"
+        onError={(e) => {
+          e.currentTarget.style.display = 'none';
+          const sib = e.currentTarget.nextElementSibling;
+          if (sib instanceof HTMLElement) sib.style.display = 'block';
+        }}
+      />
+      <PinsPetsLogoIconSvg size={size} />
+    </span>
+  );
+}
+
+function PinsPetsLogoIconSvg({ size = 36 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 40 50"
+      fill="none"
+      aria-hidden="true"
+      style={{ display: 'none' }}
+    >
       <ellipse cx="7.4" cy="10.4" rx="4.4" ry="5.5" fill="#111" stroke="#E85D04" strokeWidth="1.9" />
       <ellipse cx="15.1" cy="5.6" rx="4.6" ry="5.7" fill="#111" stroke="#E85D04" strokeWidth="1.9" />
       <ellipse cx="24.9" cy="5.6" rx="4.6" ry="5.7" fill="#111" stroke="#E85D04" strokeWidth="1.9" />
@@ -84,7 +113,7 @@ export function PetSwitcher() {
       >
         {data.pets.map((pet) => (
           <option key={pet.id} value={pet.id}>
-            {pet.name} · {SPECIES_LABELS[pet.species]}
+            {pet.name} · {speciesLabel(pet.species)}
           </option>
         ))}
       </select>

@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const speciesSchema = z.enum(["dog", "cat", "other"]);
+export const speciesSchema = z.enum(["dog", "cat", "horse", "rabbit", "other"]);
 export const medTypeSchema = z.enum([
   "injection",
   "oral",
@@ -29,13 +29,16 @@ export const doseUnitSchema = z.enum([
   "pump",
 ]);
 export const petSexSchema = z.enum(["male", "female", "unknown"]);
+export const weightUnitSchema = z.enum(["kg", "lb"]);
 
 export const petSchema = z.object({
   id: z.string().uuid(),
   name: z.string().trim().min(1).max(80),
   species: speciesSchema,
   breed: z.string().trim().max(80).optional(),
-  weightKg: z.number().positive().finite().max(500).optional(),
+  /** Canonical mass in kilograms. Display/entry unit is weightUnit. */
+  weightKg: z.number().positive().finite().max(2000).optional(),
+  weightUnit: weightUnitSchema.optional(),
   sex: petSexSchema.optional(),
   birthdate: z.string().optional(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
