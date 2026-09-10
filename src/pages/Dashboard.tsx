@@ -2,13 +2,13 @@ import { useState } from "react";
 import { format, differenceInHours } from "date-fns";
 import { Flame, Syringe, Droplets, Droplet, Calculator, Shield } from "lucide-react";
 import { Link } from "wouter";
-import { usePinsStore, inventoryForPet } from "@/lib/store";
+import { usePinsStore, inventoryForPet, type InjectionLog } from "@/lib/store";
 import { SecurityBadge, SecuritySettings } from "@/components/SecuritySettings";
 import { PinsPetsHeader, PetSwitcher } from "@/components/Brand";
 import { siteLabel } from "@/lib/body-map-data";
 
 // ── Page ──────────────────────────────────────────────────────────────────────
-export default function Dashboard() {
+export default function Dashboard({ onEditLog }: { onEditLog?: (log: InjectionLog) => void }) {
   const { data, activePet } = usePinsStore();
   const [securityOpen, setSecurityOpen] = useState(false);
   const logs = data.logs.filter((l) => l.petId === activePet?.id);
@@ -176,7 +176,12 @@ export default function Dashboard() {
                 const place = log.siteId ? siteLabel(log.siteId) : log.medType;
 
                 return (
-                  <div key={log.id} className="flex items-center gap-4 py-2 border-b border-border last:border-0">
+                  <button
+                    key={log.id}
+                    type="button"
+                    onClick={() => onEditLog?.(log)}
+                    className="flex items-center gap-4 py-2 border-b border-border last:border-0 w-full text-left rounded-lg hover:bg-muted/40 transition-colors"
+                  >
                     <div
                       className="w-3 h-3 rounded-full flex-shrink-0"
                       style={{
@@ -194,7 +199,7 @@ export default function Dashboard() {
                         <span className="ml-2 flex-shrink-0">{log.dose} {log.unit}</span>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 );
               })}
             </div>

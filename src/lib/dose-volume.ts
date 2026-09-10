@@ -23,6 +23,16 @@ export function formatVolumeMl(ml: number): string {
   return `${text} ml`;
 }
 
+/** U-100 syringe label: 100 units = 1 ml (0.2 ml â†’ 20 units). */
+export function formatSyringeUnits(ml: number): string {
+  if (!Number.isFinite(ml) || ml <= 0) return "";
+  const units = ml * 100;
+  const abs = Math.abs(units);
+  const decimals = abs >= 10 ? 0 : abs >= 1 ? 1 : 2;
+  const text = units.toFixed(decimals).replace(/\.?0+$/, "");
+  return `${text} units`;
+}
+
 export type DoseVolumeInput = {
   dose?: number | null;
   doseUnit: DoseUnit;
@@ -42,7 +52,7 @@ export function doseVolumeMl(input: DoseVolumeInput): { ml: number; label: strin
   if (concentration == null || !Number.isFinite(concentration) || concentration <= 0) {
     return null;
   }
-  // Dose is already a volume — do not invent a second conversion.
+  // Dose is already a volume ï¿½ do not invent a second conversion.
   if (doseUnit === "ml") return null;
 
   const doseInConcUnit = convertDoseUnits(dose, doseUnit, concentrationUnit);
@@ -51,5 +61,5 @@ export function doseVolumeMl(input: DoseVolumeInput): { ml: number; label: strin
   const ml = doseInConcUnit / concentration;
   if (!Number.isFinite(ml) || ml <= 0) return null;
 
-  return { ml, label: formatVolumeMl(ml) };
+  return { ml, label: formatSyringeUnits(ml) };
 }

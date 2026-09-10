@@ -22,6 +22,7 @@ import { buildSyncEnvelope } from "@/lib/sync";
 import { bootstrapPinsData, saveEncrypted, saveWithDeviceKey } from "@/lib/storage";
 import {
   deductVolumeFromCompound,
+  restoreVolumeToCompound,
   scheduleForRemainingInventory,
 } from "@/lib/inventory-vials";
 import type { Species } from "@/lib/body-map-data";
@@ -112,6 +113,10 @@ type PinsStoreContextType = {
   updatePet: (id: string, updates: Partial<Pet>) => void;
   deletePet: (id: string) => void;
   addLog: (log: Omit<InjectionLog, "id" | "updatedAt">) => { ok: true } | { ok: false; error: string };
+  updateLog: (
+    id: string,
+    updates: Omit<InjectionLog, "id" | "updatedAt" | "deletedAt">,
+  ) => { ok: true } | { ok: false; error: string };
   updateInventory: (id: string, updates: Partial<InventoryItem>) => void;
   addInventoryItem: (
     item: Omit<InventoryItem, "id" | "updatedAt">,
@@ -227,6 +232,13 @@ export function PinsProvider({ children }: { children: ReactNode }) {
     const parsed = newInjectionLogSchema.safeParse(log);
     if (!parsed.success) return { ok: false as const, error: formatZodError(parsed.error) };
 
+    const inInventory = inventoryForPet(data.inventory, parsed.data.petId).some(
+      (item) => item.name === parsed.data.compound,
+    );
+    if (!inInventory) {
+      return { ok: false as const, error: "Add this medication in Inventory before logging a dose." };
+    }
+
     const now = new Date().toISOString();
     const newLog: InjectionLog = { ...parsed.data, id: crypto.randomUUID(), updatedAt: now };
 
@@ -244,6 +256,59 @@ export function PinsProvider({ children }: { children: ReactNode }) {
         logs: [newLog, ...prev.logs].sort(
           (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
         ),
+        inventory,
+        schedule: scheduleForRemainingInventory(prev.schedule, inventory),
+      };
+    });
+
+    return { ok: true as const };
+  };
+
+  const updateLog = (
+    id: string,
+    updates: Omit<InjectionLog, "id" | "updatedAt" | "deletedAt">,
+  ) => {
+    const parsed = newInjectionLogSchema.safeParse(updates);
+    if (!parsed.success) return { ok: false as const, error: formatZodError(parsed.error) };
+
+    const existing = data.logs.find((log) => log.id === id);
+    if (!existing) return { ok: false as const, error: "Dose not found." };
+
+    const now = new Date().toISOString();
+    const nextLog: InjectionLog = { ...existing, ...parsed.data, id, updatedAt: now };
+
+    setData((prev) => {
+      const current = prev.logs.find((log) => log.id === id);
+      if (!current) return prev;
+
+      const doseChanged =
+        current.compound !== nextLog.compound ||
+        current.dose !== nextLog.dose ||
+        current.unit !== nextLog.unit;
+
+      let inventory = prev.inventory;
+      if (doseChanged) {
+        inventory = restoreVolumeToCompound(
+          inventory,
+          current.compound,
+          current.dose,
+          current.unit,
+          now,
+        );
+        inventory = deductVolumeFromCompound(
+          inventory,
+          nextLog.compound,
+          nextLog.dose,
+          nextLog.unit,
+          now,
+        );
+      }
+
+      return {
+        ...prev,
+        logs: prev.logs
+          .map((log) => (log.id === id ? nextLog : log))
+          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
         inventory,
         schedule: scheduleForRemainingInventory(prev.schedule, inventory),
       };
@@ -314,6 +379,7 @@ export function PinsProvider({ children }: { children: ReactNode }) {
         updatePet,
         deletePet,
         addLog,
+        updateLog,
         updateInventory,
         addInventoryItem,
         deleteInventoryItem,

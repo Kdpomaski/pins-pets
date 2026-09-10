@@ -1,9 +1,15 @@
 import React, { useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { usePinsStore, inventoryForPet, type InventoryItem } from "@/lib/store";
-import { MAP_IMAGES, sitesFor, type MapView } from "@/lib/body-map-data";
+import {
+  MAP_IMAGES,
+  displaySiteX,
+  siteIdMatches,
+  sitesFor,
+  type Laterality,
+  type MapView,
+} from "@/lib/body-map-data";
 import { PetSwitcher, PinsPetsHeader } from "@/components/Brand";
 import { ProtocolChips } from "@/components/ProtocolChips";
 
@@ -24,6 +30,7 @@ const BodyMap: React.FC<{
 }> = ({ onLogInjection, logs = [] }) => {
   const { data, activePet } = usePinsStore();
   const [view, setView] = useState<MapView>("side");
+  const [laterality, setLaterality] = useState<Laterality>("right");
   const [selectedCompound, setSelectedCompound] = useState<InventoryItem | null>(null);
 
   const species = activePet?.species ?? "dog";
@@ -50,7 +57,7 @@ const BodyMap: React.FC<{
 
   const getSiteLogs = (siteId: string) =>
     filteredLogs
-      .filter((l) => l.siteId === siteId)
+      .filter((l) => siteIdMatches(siteId, l.siteId))
       .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
 
   const getLastDate = (siteId: string) => {
@@ -67,8 +74,9 @@ const BodyMap: React.FC<{
     return "rgba(74, 222, 128, 0.5)";
   };
 
-  const regions = sitesFor(species, view);
+  const regions = sitesFor(species, view, laterality);
   const mapSrc = MAP_IMAGES[species][view];
+  const flipped = laterality === "left";
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-24 pt-6 px-4">
@@ -84,13 +92,40 @@ const BodyMap: React.FC<{
               Tap a spot to log {activePet ? `for ${activePet.name}` : ""}
             </p>
           </div>
-          <Button
-            variant="outline"
-            className="border-border text-base px-5 py-5 h-auto min-h-[48px]"
-            onClick={() => setView(view === "side" ? "top" : "side")}
-          >
-            {view === "side" ? "Top" : "Side"}
-          </Button>
+          <div className="flex flex-col items-end gap-2 shrink-0">
+            <div className="flex rounded-xl border border-border overflow-hidden">
+              {(["side", "top"] as MapView[]).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setView(option)}
+                  className={`px-4 py-2.5 text-sm font-semibold min-h-[44px] capitalize ${
+                    view === option
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background text-muted-foreground"
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+            <div className="flex rounded-xl border border-border overflow-hidden">
+              {(["left", "right"] as Laterality[]).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setLaterality(option)}
+                  className={`px-4 py-2.5 text-sm font-semibold min-h-[44px] ${
+                    laterality === option
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background text-muted-foreground"
+                  }`}
+                >
+                  {option === "left" ? "Left" : "Right"}
+                </button>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-col md:flex-row gap-4">
@@ -155,8 +190,8 @@ const BodyMap: React.FC<{
             <div className="relative rounded-2xl overflow-hidden border border-border aspect-[3/2] bg-black">
               <img
                 src={mapSrc}
-                alt={`${species} ${view} body map`}
-                className="absolute inset-0 w-full h-full object-contain"
+                alt={`${species} ${view} ${laterality} body map`}
+                className={`absolute inset-0 w-full h-full object-contain ${flipped ? "-scale-x-100" : ""}`}
                 draggable={false}
               />
 
@@ -176,7 +211,7 @@ const BodyMap: React.FC<{
                     title={title}
                     className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 focus:outline-none focus:ring-4 focus:ring-primary/50 group touch-manipulation"
                     style={{
-                      left: `${r.cx}%`,
+                      left: `${displaySiteX(r.cx, laterality)}%`,
                       top: `${r.cy}%`,
                       width: "5.5%",
                       height: "8%",

@@ -30,6 +30,33 @@ function toItemUnits(dose: number, doseUnit: DoseUnit, itemUnit: DoseUnit): numb
   return dose;
 }
 
+export function restoreVolumeToCompound(
+  inventory: InventoryItem[],
+  compound: string,
+  dose: number,
+  doseUnit: DoseUnit,
+  now: string,
+): InventoryItem[] {
+  const compoundVials = inventory.filter((v) => v.name === compound);
+  const target = sortVialsForCompound(compoundVials)[0];
+  if (!target) return inventory;
+
+  const doseInItemUnits = toItemUnits(dose, doseUnit, target.unit);
+  let restored = doseInItemUnits;
+  if (target.form === "vial" && target.concentration) {
+    restored = doseInItemUnits / target.concentration;
+  }
+
+  return inventory.map((item) => {
+    if (item.id !== target.id) return item;
+    return {
+      ...item,
+      remainingVolume: item.remainingVolume + restored,
+      updatedAt: now,
+    };
+  });
+}
+
 export function deductVolumeFromCompound(
   inventory: InventoryItem[],
   compound: string,

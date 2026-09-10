@@ -1,5 +1,7 @@
 export type Species = "dog" | "cat" | "horse" | "rabbit" | "other";
 export type MapView = "side" | "top";
+export type Laterality = "left" | "right";
+export type SiteLaterality = Laterality | "midline";
 
 export type BodySite = {
   id: string;
@@ -7,6 +9,10 @@ export type BodySite = {
   view: MapView;
   cx: number;
   cy: number;
+  /** Side-view laterality. Top-view L/R is already in the id/label. */
+  laterality?: SiteLaterality;
+  /** Older site ids that should still resolve to this pin (heatmap + labels). */
+  aliases?: string[];
 };
 
 export const SPECIES_LABELS: Record<Species, string> = {
@@ -34,103 +40,171 @@ export const MAP_IMAGES: Record<Species, Record<MapView, string>> = {
   other: { side: asset("body-map/other-side.jpg"), top: asset("body-map/other-top.jpg") },
 };
 
+/**
+ * Artwork is 1248×832 (3:2), matching the map frame, so cx/cy are % of the image.
+ * Side silhouettes face left → unflipped view is the animal's RIGHT side.
+ * Coordinates audited against the JPGs (2026-09).
+ */
+function mid(
+  species: string,
+  view: MapView,
+  key: string,
+  label: string,
+  cx: number,
+  cy: number,
+  oldId?: string,
+): BodySite {
+  return {
+    id: `${species}-${view}-${key}`,
+    label,
+    view,
+    cx,
+    cy,
+    laterality: view === "side" ? "midline" : undefined,
+    aliases: oldId && oldId !== `${species}-${view}-${key}` ? [oldId] : undefined,
+  };
+}
+
+function sidePair(
+  species: string,
+  key: string,
+  label: string,
+  cx: number,
+  cy: number,
+): BodySite[] {
+  const oldId = `${species}-side-${key}`;
+  return [
+    {
+      id: `${species}-side-right-${key}`,
+      label: `Right ${label}`,
+      view: "side",
+      cx,
+      cy,
+      laterality: "right",
+      aliases: [oldId],
+    },
+    {
+      id: `${species}-side-left-${key}`,
+      label: `Left ${label}`,
+      view: "side",
+      cx,
+      cy,
+      laterality: "left",
+    },
+  ];
+}
+
+function topPair(
+  species: string,
+  key: string,
+  label: string,
+  leftCx: number,
+  rightCx: number,
+  cy: number,
+): BodySite[] {
+  return [
+    {
+      id: `${species}-top-left-${key}`,
+      label: `Left ${label}`,
+      view: "top",
+      cx: leftCx,
+      cy,
+      laterality: "left",
+    },
+    {
+      id: `${species}-top-right-${key}`,
+      label: `Right ${label}`,
+      view: "top",
+      cx: rightCx,
+      cy,
+      laterality: "right",
+    },
+  ];
+}
+
 const dogSites: BodySite[] = [
-  { id: "dog-side-scruff", label: "Scruff / nape", view: "side", cx: 33, cy: 28 },
-  { id: "dog-side-withers", label: "Withers", view: "side", cx: 41, cy: 26 },
-  { id: "dog-side-shoulder", label: "Shoulder", view: "side", cx: 38, cy: 38 },
-  { id: "dog-side-thorax", label: "Lateral thorax", view: "side", cx: 50, cy: 40 },
-  { id: "dog-side-flank", label: "Flank", view: "side", cx: 60, cy: 42 },
-  { id: "dog-side-loin", label: "Loin / epaxial", view: "side", cx: 66, cy: 34 },
-  { id: "dog-side-hip", label: "Hip", view: "side", cx: 72, cy: 40 },
-  { id: "dog-side-thigh", label: "Thigh (quad)", view: "side", cx: 74, cy: 52 },
-  { id: "dog-side-forearm", label: "Forearm", view: "side", cx: 32, cy: 58 },
-  { id: "dog-top-scruff", label: "Scruff / nape", view: "top", cx: 50, cy: 22 },
-  { id: "dog-top-left-shoulder", label: "Left shoulder", view: "top", cx: 38, cy: 32 },
-  { id: "dog-top-right-shoulder", label: "Right shoulder", view: "top", cx: 62, cy: 32 },
-  { id: "dog-top-left-thorax", label: "Left thorax", view: "top", cx: 42, cy: 42 },
-  { id: "dog-top-right-thorax", label: "Right thorax", view: "top", cx: 58, cy: 42 },
-  { id: "dog-top-left-flank", label: "Left flank", view: "top", cx: 40, cy: 54 },
-  { id: "dog-top-right-flank", label: "Right flank", view: "top", cx: 60, cy: 54 },
-  { id: "dog-top-left-hip", label: "Left hip", view: "top", cx: 40, cy: 64 },
-  { id: "dog-top-right-hip", label: "Right hip", view: "top", cx: 60, cy: 64 },
-  { id: "dog-top-tail-base", label: "Tail base", view: "top", cx: 50, cy: 72 },
+  mid("dog", "side", "scruff", "Scruff / nape", 30, 24),
+  mid("dog", "side", "withers", "Withers", 39, 22),
+  ...sidePair("dog", "shoulder", "shoulder", 36, 38),
+  ...sidePair("dog", "thorax", "thorax", 47, 40),
+  ...sidePair("dog", "flank", "flank", 58, 42),
+  mid("dog", "side", "loin", "Loin / epaxial", 64, 30, "dog-side-loin"),
+  ...sidePair("dog", "hip", "hip", 70, 38),
+  ...sidePair("dog", "thigh", "thigh (quad)", 72, 54),
+  ...sidePair("dog", "forearm", "forearm", 34, 64),
+  mid("dog", "side", "rectum", "Rectum / anus", 78, 46),
+  mid("dog", "top", "scruff", "Scruff / nape", 50, 24),
+  ...topPair("dog", "shoulder", "shoulder", 43, 57, 32),
+  ...topPair("dog", "thorax", "thorax", 44, 56, 44),
+  ...topPair("dog", "flank", "flank", 43, 57, 54),
+  ...topPair("dog", "hip", "hip", 44, 56, 64),
+  mid("dog", "top", "tail-base", "Tail base", 50, 74),
 ];
 
 const catSites: BodySite[] = [
-  { id: "cat-side-scruff", label: "Scruff / nape", view: "side", cx: 32, cy: 30 },
-  { id: "cat-side-withers", label: "Between shoulders", view: "side", cx: 40, cy: 32 },
-  { id: "cat-side-shoulder", label: "Shoulder", view: "side", cx: 38, cy: 42 },
-  { id: "cat-side-thorax", label: "Lateral thorax", view: "side", cx: 50, cy: 42 },
-  { id: "cat-side-flank", label: "Flank", view: "side", cx: 62, cy: 44 },
-  { id: "cat-side-loin", label: "Loin / epaxial", view: "side", cx: 68, cy: 38 },
-  { id: "cat-side-hip", label: "Hip", view: "side", cx: 74, cy: 44 },
-  { id: "cat-side-thigh", label: "Hind limb", view: "side", cx: 76, cy: 56 },
-  { id: "cat-top-scruff", label: "Scruff / nape", view: "top", cx: 50, cy: 20 },
-  { id: "cat-top-left-shoulder", label: "Left shoulder", view: "top", cx: 40, cy: 30 },
-  { id: "cat-top-right-shoulder", label: "Right shoulder", view: "top", cx: 60, cy: 30 },
-  { id: "cat-top-left-flank", label: "Left flank", view: "top", cx: 40, cy: 48 },
-  { id: "cat-top-right-flank", label: "Right flank", view: "top", cx: 60, cy: 48 },
-  { id: "cat-top-left-hip", label: "Left hip", view: "top", cx: 40, cy: 60 },
-  { id: "cat-top-right-hip", label: "Right hip", view: "top", cx: 60, cy: 60 },
-  { id: "cat-top-tail-base", label: "Tail base", view: "top", cx: 50, cy: 70 },
+  mid("cat", "side", "scruff", "Scruff / nape", 28, 26),
+  mid("cat", "side", "withers", "Between shoulders", 38, 28, "cat-side-withers"),
+  ...sidePair("cat", "shoulder", "shoulder", 36, 40),
+  ...sidePair("cat", "thorax", "thorax", 48, 42),
+  ...sidePair("cat", "flank", "flank", 60, 44),
+  mid("cat", "side", "loin", "Loin / epaxial", 66, 34, "cat-side-loin"),
+  ...sidePair("cat", "hip", "hip", 72, 42),
+  ...sidePair("cat", "thigh", "hind limb", 74, 56),
+  mid("cat", "side", "rectum", "Rectum / anus", 80, 50),
+  mid("cat", "top", "scruff", "Scruff / nape", 50, 22),
+  ...topPair("cat", "shoulder", "shoulder", 44, 56, 30),
+  ...topPair("cat", "flank", "flank", 43, 57, 48),
+  ...topPair("cat", "hip", "hip", 44, 56, 60),
+  mid("cat", "top", "tail-base", "Tail base", 50, 72),
 ];
 
 const otherSites: BodySite[] = [
-  { id: "other-side-scruff", label: "Scruff / nape", view: "side", cx: 34, cy: 32 },
-  { id: "other-side-shoulder", label: "Shoulder", view: "side", cx: 40, cy: 42 },
-  { id: "other-side-flank", label: "Flank", view: "side", cx: 58, cy: 46 },
-  { id: "other-side-hip", label: "Hip / rump", view: "side", cx: 72, cy: 48 },
-  { id: "other-side-thigh", label: "Hind limb", view: "side", cx: 70, cy: 62 },
-  { id: "other-top-scruff", label: "Scruff / nape", view: "top", cx: 50, cy: 28 },
-  { id: "other-top-left-shoulder", label: "Left shoulder", view: "top", cx: 42, cy: 36 },
-  { id: "other-top-right-shoulder", label: "Right shoulder", view: "top", cx: 58, cy: 36 },
-  { id: "other-top-left-flank", label: "Left flank", view: "top", cx: 40, cy: 52 },
-  { id: "other-top-right-flank", label: "Right flank", view: "top", cx: 60, cy: 52 },
-  { id: "other-top-rump", label: "Rump", view: "top", cx: 50, cy: 68 },
+  mid("other", "side", "scruff", "Scruff / nape", 32, 30),
+  ...sidePair("other", "shoulder", "shoulder", 38, 42),
+  ...sidePair("other", "flank", "flank", 54, 46),
+  ...sidePair("other", "hip", "hip / rump", 66, 46),
+  ...sidePair("other", "thigh", "hind limb", 64, 62),
+  mid("other", "side", "rectum", "Rectum / anus", 76, 54),
+  mid("other", "top", "scruff", "Scruff / nape", 50, 26),
+  ...topPair("other", "shoulder", "shoulder", 43, 57, 34),
+  ...topPair("other", "flank", "flank", 42, 58, 50),
+  mid("other", "top", "rump", "Rump", 50, 70),
 ];
 
 const horseSites: BodySite[] = [
-  { id: "horse-side-neck", label: "Neck / cervical", view: "side", cx: 28, cy: 34 },
-  { id: "horse-side-withers", label: "Withers", view: "side", cx: 40, cy: 26 },
-  { id: "horse-side-shoulder", label: "Shoulder", view: "side", cx: 38, cy: 40 },
-  { id: "horse-side-pectoral", label: "Pectoral / chest", view: "side", cx: 32, cy: 54 },
-  { id: "horse-side-thorax", label: "Lateral thorax", view: "side", cx: 52, cy: 42 },
-  { id: "horse-side-flank", label: "Flank", view: "side", cx: 64, cy: 44 },
-  { id: "horse-side-loin", label: "Loin / epaxial", view: "side", cx: 70, cy: 32 },
-  { id: "horse-side-hip", label: "Hip / gluteal", view: "side", cx: 78, cy: 40 },
-  { id: "horse-side-thigh", label: "Thigh / hamstring", view: "side", cx: 80, cy: 56 },
-  { id: "horse-side-rectum", label: "Rectum / anus", view: "side", cx: 86, cy: 48 },
-  { id: "horse-top-poll", label: "Poll / nape", view: "top", cx: 50, cy: 16 },
-  { id: "horse-top-left-neck", label: "Left neck", view: "top", cx: 42, cy: 26 },
-  { id: "horse-top-right-neck", label: "Right neck", view: "top", cx: 58, cy: 26 },
-  { id: "horse-top-left-shoulder", label: "Left shoulder", view: "top", cx: 36, cy: 36 },
-  { id: "horse-top-right-shoulder", label: "Right shoulder", view: "top", cx: 64, cy: 36 },
-  { id: "horse-top-left-thorax", label: "Left thorax", view: "top", cx: 38, cy: 48 },
-  { id: "horse-top-right-thorax", label: "Right thorax", view: "top", cx: 62, cy: 48 },
-  { id: "horse-top-left-flank", label: "Left flank", view: "top", cx: 38, cy: 58 },
-  { id: "horse-top-right-flank", label: "Right flank", view: "top", cx: 62, cy: 58 },
-  { id: "horse-top-left-hip", label: "Left hip", view: "top", cx: 40, cy: 70 },
-  { id: "horse-top-right-hip", label: "Right hip", view: "top", cx: 60, cy: 70 },
-  { id: "horse-top-tail-base", label: "Tail base", view: "top", cx: 50, cy: 80 },
+  ...sidePair("horse", "neck", "neck / cervical", 26, 32),
+  mid("horse", "side", "withers", "Withers", 36, 24),
+  ...sidePair("horse", "shoulder", "shoulder", 36, 40),
+  ...sidePair("horse", "pectoral", "pectoral / chest", 30, 50),
+  ...sidePair("horse", "thorax", "thorax", 50, 40),
+  ...sidePair("horse", "flank", "flank", 62, 42),
+  mid("horse", "side", "loin", "Loin / epaxial", 68, 28, "horse-side-loin"),
+  ...sidePair("horse", "hip", "hip / gluteal", 74, 36),
+  ...sidePair("horse", "thigh", "thigh / hamstring", 76, 54),
+  mid("horse", "side", "rectum", "Rectum / anus", 82, 46),
+  mid("horse", "top", "poll", "Poll / nape", 50, 14),
+  ...topPair("horse", "neck", "neck", 46, 54, 24),
+  ...topPair("horse", "shoulder", "shoulder", 40, 60, 34),
+  ...topPair("horse", "thorax", "thorax", 42, 58, 46),
+  ...topPair("horse", "flank", "flank", 42, 58, 56),
+  ...topPair("horse", "hip", "hip", 43, 57, 66),
+  mid("horse", "top", "tail-base", "Tail base", 50, 76),
 ];
 
 const rabbitSites: BodySite[] = [
-  { id: "rabbit-side-scruff", label: "Scruff / nape", view: "side", cx: 36, cy: 30 },
-  { id: "rabbit-side-shoulder", label: "Shoulder", view: "side", cx: 40, cy: 42 },
-  { id: "rabbit-side-thorax", label: "Lateral thorax", view: "side", cx: 50, cy: 44 },
-  { id: "rabbit-side-flank", label: "Flank", view: "side", cx: 60, cy: 46 },
-  { id: "rabbit-side-loin", label: "Loin / epaxial", view: "side", cx: 66, cy: 36 },
-  { id: "rabbit-side-hip", label: "Hip / haunch", view: "side", cx: 74, cy: 46 },
-  { id: "rabbit-side-thigh", label: "Hind limb", view: "side", cx: 72, cy: 60 },
-  { id: "rabbit-side-rectum", label: "Rectum / anus", view: "side", cx: 82, cy: 52 },
-  { id: "rabbit-top-scruff", label: "Scruff / nape", view: "top", cx: 50, cy: 22 },
-  { id: "rabbit-top-left-shoulder", label: "Left shoulder", view: "top", cx: 38, cy: 34 },
-  { id: "rabbit-top-right-shoulder", label: "Right shoulder", view: "top", cx: 62, cy: 34 },
-  { id: "rabbit-top-left-flank", label: "Left flank", view: "top", cx: 38, cy: 50 },
-  { id: "rabbit-top-right-flank", label: "Right flank", view: "top", cx: 62, cy: 50 },
-  { id: "rabbit-top-left-hip", label: "Left hip", view: "top", cx: 40, cy: 64 },
-  { id: "rabbit-top-right-hip", label: "Right hip", view: "top", cx: 60, cy: 64 },
-  { id: "rabbit-top-rump", label: "Rump / tail", view: "top", cx: 50, cy: 74 },
+  mid("rabbit", "side", "scruff", "Scruff / nape", 32, 28),
+  ...sidePair("rabbit", "shoulder", "shoulder", 38, 42),
+  ...sidePair("rabbit", "thorax", "thorax", 48, 46),
+  ...sidePair("rabbit", "flank", "flank", 56, 48),
+  mid("rabbit", "side", "loin", "Loin / epaxial", 60, 34, "rabbit-side-loin"),
+  ...sidePair("rabbit", "hip", "hip / haunch", 66, 44),
+  ...sidePair("rabbit", "thigh", "hind limb", 64, 60),
+  mid("rabbit", "side", "rectum", "Rectum / anus", 74, 54),
+  mid("rabbit", "top", "scruff", "Scruff / nape", 50, 22),
+  ...topPair("rabbit", "shoulder", "shoulder", 42, 58, 34),
+  ...topPair("rabbit", "flank", "flank", 42, 58, 50),
+  ...topPair("rabbit", "hip", "hip", 43, 57, 64),
+  mid("rabbit", "top", "rump", "Rump / tail", 50, 74),
 ];
 
 export const SPECIES_SITES: Record<Species, BodySite[]> = {
@@ -149,14 +223,34 @@ export const bodySites: BodySite[] = [
   ...otherSites,
 ];
 
-export function sitesFor(species: Species, view: MapView): BodySite[] {
-  return SPECIES_SITES[species].filter((s) => s.view === view);
-}
-
-export function siteLabel(siteId: string): string {
-  return bodySites.find((s) => s.id === siteId)?.label ?? siteId.replace(/-/g, " ");
+export function sitesFor(
+  species: Species,
+  view: MapView,
+  laterality: Laterality = "right",
+): BodySite[] {
+  return SPECIES_SITES[species].filter((s) => {
+    if (s.view !== view) return false;
+    if (view === "top") return true;
+    return !s.laterality || s.laterality === "midline" || s.laterality === laterality;
+  });
 }
 
 export function siteById(siteId: string): BodySite | undefined {
-  return bodySites.find((s) => s.id === siteId);
+  return bodySites.find((s) => s.id === siteId || s.aliases?.includes(siteId));
+}
+
+export function siteLabel(siteId: string): string {
+  return siteById(siteId)?.label ?? siteId.replace(/-/g, " ");
+}
+
+export function siteIdMatches(pinId: string, logSiteId: string): boolean {
+  if (pinId === logSiteId) return true;
+  const pin = siteById(pinId);
+  const log = siteById(logSiteId);
+  if (!pin || !log) return false;
+  return pin.id === log.id;
+}
+
+export function displaySiteX(cx: number, laterality: Laterality): number {
+  return laterality === "left" ? 100 - cx : cx;
 }
