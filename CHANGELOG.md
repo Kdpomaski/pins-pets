@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased — L/R body map, edit shots, empty inventory (1.0.0 / iOS 7 / Android 6)
+
+- Body map Left/Right flip (unflipped side = animal's right); site pins audited vs 3:2 artwork
+- Side-view lateral sites are Left/Right pairs; old site ids still match for heatmaps
+- Tap a saved dose → "Edit this dose?" → all fields + native date wheel → save
+- Fresh inventory is empty; cannot log a shot until a compound is in Inventory
+- SoftPaywall stays OFF (`VITE_PAYWALL_ENABLED` default false)
+- Marketing 1.0.0; iOS `CURRENT_PROJECT_VERSION` 7; Android `versionCode` 6
+- Units-per-dose chips stay U-100 syringe units (`volume_ml × 100`)
+
 ## Unreleased — tester: weight units, Android back exit, dose volume chips
 
 - Pets enter/edit/display weight in lb or kg; stored value stays `weightKg` (lb converted on save)

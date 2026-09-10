@@ -1,7 +1,7 @@
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import NotFound from '@/pages/not-found';
-import { Route, Switch, Router as WouterRouter } from 'wouter';
+import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import { useState } from 'react';
 
 import Dashboard from '@/pages/Dashboard';
@@ -17,10 +17,22 @@ import { AuthGate } from '@/components/AuthGate';
 import { SecurityGate } from '@/components/SecurityGate';
 import AuthCallback from '@/pages/AuthCallback';
 import { AuthProvider } from '@/lib/auth-context';
-import { PinsProvider, usePinsStore } from '@/lib/store';
+import { PinsProvider, usePinsStore, inventoryForPet, type InjectionLog } from '@/lib/store';
 import { SecurityProvider } from '@/lib/security-context';
 import { EntitlementProvider } from '@/lib/billing/entitlement-context';
 import { SoftPaywallModal } from '@/components/SoftPaywallModal';
+import { useToast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { siteLabel } from '@/lib/body-map-data';
 
 function BodyMapRoute({
   handleOpenLogger,
@@ -49,8 +61,10 @@ function BodyMapRoute({
 
 function ProtectedRouter({
   handleOpenLogger,
+  handleRequestEdit,
 }: {
   handleOpenLogger: (siteId?: string, compoundName?: string) => void;
+  handleRequestEdit: (log: InjectionLog) => void;
 }) {
   return (
     <Switch>
@@ -60,8 +74,12 @@ function ProtectedRouter({
       <Route path="/body-map">
         <BodyMapRoute handleOpenLogger={handleOpenLogger} />
       </Route>
-      <Route path="/dashboard" component={Dashboard} />
-      <Route path="/calendar" component={Calendar} />
+      <Route path="/dashboard">
+        <Dashboard onEditLog={handleRequestEdit} />
+      </Route>
+      <Route path="/calendar">
+        <Calendar onEditLog={handleRequestEdit} />
+      </Route>
       <Route path="/inventory" component={Inventory} />
       <Route path="/calculator" component={Calculator} />
       <Route path="/pets" component={Pets} />
@@ -71,26 +89,81 @@ function ProtectedRouter({
 }
 
 function AppShell() {
+  const { data, activePet } = usePinsStore();
+  const { toast } = useToast();
+  const [, setLocation] = useLocation();
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [modalSiteId, setModalSiteId] = useState<string | null>(null);
   const [modalCompoundName, setModalCompoundName] = useState<string | null>(null);
+  const [editLog, setEditLog] = useState<InjectionLog | null>(null);
+  const [pendingEdit, setPendingEdit] = useState<InjectionLog | null>(null);
+
+  const petInventory = inventoryForPet(data.inventory, activePet?.id ?? null);
 
   const handleOpenLogger = (siteId?: string, compoundName?: string) => {
+    if (petInventory.length === 0) {
+      toast({
+        title: 'Add a medication first',
+        description: 'Inventory is empty. Add a compound before logging a dose.',
+      });
+      setLocation('/inventory');
+      return;
+    }
+    setEditLog(null);
     setModalSiteId(siteId ?? null);
     setModalCompoundName(compoundName ?? null);
     setIsLogModalOpen(true);
   };
 
+  const handleRequestEdit = (log: InjectionLog) => {
+    setPendingEdit(log);
+  };
+
+  const confirmEdit = () => {
+    if (!pendingEdit) return;
+    setEditLog(pendingEdit);
+    setModalSiteId(null);
+    setModalCompoundName(null);
+    setPendingEdit(null);
+    setIsLogModalOpen(true);
+  };
+
+  const closeLogger = () => {
+    setIsLogModalOpen(false);
+    setEditLog(null);
+    setModalSiteId(null);
+    setModalCompoundName(null);
+  };
+
   return (
     <div className="bg-background text-foreground min-h-[100dvh] font-sans selection:bg-primary/30">
-      <ProtectedRouter handleOpenLogger={handleOpenLogger} />
+      <ProtectedRouter handleOpenLogger={handleOpenLogger} handleRequestEdit={handleRequestEdit} />
       <BottomNav onOpenLogModal={() => handleOpenLogger()} />
       <InjectionLoggerModal
         isOpen={isLogModalOpen}
-        onClose={() => setIsLogModalOpen(false)}
+        onClose={closeLogger}
         defaultSiteId={modalSiteId}
         defaultCompoundName={modalCompoundName}
+        editLog={editLog}
       />
+      <AlertDialog open={!!pendingEdit} onOpenChange={(open) => !open && setPendingEdit(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Edit this dose?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingEdit
+                ? `${pendingEdit.compound} · ${pendingEdit.dose} ${pendingEdit.unit}${
+                    pendingEdit.siteId ? ` · ${siteLabel(pendingEdit.siteId)}` : ''
+                  }`
+                : ''}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmEdit}>Edit</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -806,7 +806,7 @@ function AddInventoryModal({
 
           <button
             onClick={handleSave}
-            disabled={!name || !concentration || !totalVolume}
+            disabled={!name || !totalVolume || (form === "vial" && !concentration)}
             className="w-full bg-primary text-primary-foreground font-semibold rounded-xl p-4 mt-2 hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
             Add to Inventory

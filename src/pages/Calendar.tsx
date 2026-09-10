@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { format, startOfWeek, addDays, isSameDay } from "date-fns";
 import { ChevronLeft, ChevronRight, CheckCircle2, Circle, Download } from "lucide-react";
-import { usePinsStore } from "@/lib/store";
+import { usePinsStore, type InjectionLog } from "@/lib/store";
 import { siteLabel } from "@/lib/body-map-data";
 import { ScheduleExportModal } from "@/components/ScheduleExportModal";
 import { PetSwitcher } from "@/components/Brand";
 
-export default function CalendarView() {
+export default function CalendarView({ onEditLog }: { onEditLog?: (log: InjectionLog) => void }) {
   const { data, activePet } = usePinsStore();
   const logs = data.logs.filter((l) => l.petId === activePet?.id);
   const schedule = data.schedule.filter((s) => s.petId === activePet?.id);
@@ -122,7 +122,16 @@ export default function CalendarView() {
                           const log = daysLogs.find((l) => l.compound === dose.compound);
 
                           return (
-                            <div key={dose.id} className="flex items-start gap-3">
+                            <div
+                              key={dose.id}
+                              role={log ? "button" : undefined}
+                              tabIndex={log ? 0 : undefined}
+                              onClick={() => log && onEditLog?.(log)}
+                              onKeyDown={(e) => {
+                                if (log && (e.key === "Enter" || e.key === " ")) onEditLog?.(log);
+                              }}
+                              className={`flex items-start gap-3 ${log ? "cursor-pointer rounded-lg -mx-1 px-1 py-0.5 hover:bg-muted/40" : ""}`}
+                            >
                               <div className="mt-0.5 text-muted-foreground">
                                 {log ? (
                                   <CheckCircle2 size={18} className="text-primary" />
@@ -156,7 +165,12 @@ export default function CalendarView() {
                         {daysLogs
                           .filter((l) => !daysDoses.some((d) => d.compound === l.compound))
                           .map((log) => (
-                            <div key={log.id} className="flex items-start gap-3 opacity-80">
+                            <button
+                              key={log.id}
+                              type="button"
+                              onClick={() => onEditLog?.(log)}
+                              className="flex items-start gap-3 opacity-80 w-full text-left rounded-lg hover:bg-muted/40"
+                            >
                               <div className="mt-0.5 text-muted-foreground">
                                 <CheckCircle2 size={18} className="text-primary" />
                               </div>
@@ -172,7 +186,7 @@ export default function CalendarView() {
                                   {log.siteId ? ` • ${siteLabel(log.siteId)}` : ` • ${log.medType}`}
                                 </div>
                               </div>
-                            </div>
+                            </button>
                           ))}
                       </div>
                     </div>
