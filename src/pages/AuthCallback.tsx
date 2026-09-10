@@ -21,7 +21,7 @@ export default function AuthCallback() {
         return;
       }
 
-      setStatus('Success! Opening Pins…');
+      setStatus('Success! Opening Pins Pets…');
       clearAuthParamsFromUrl();
       setLocation('/');
     })();
