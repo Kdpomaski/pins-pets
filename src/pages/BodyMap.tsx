@@ -26,8 +26,9 @@ const NEUTRAL_PIN = "rgba(255, 255, 255, 0.12)";
 
 const BodyMap: React.FC<{
   onLogInjection?: (siteId: string, compoundName?: string) => void;
+  onAdHoc?: () => void;
   logs?: InjectionLog[];
-}> = ({ onLogInjection, logs = [] }) => {
+}> = ({ onLogInjection, onAdHoc, logs = [] }) => {
   const { data, activePet } = usePinsStore();
   const [view, setView] = useState<MapView>("side");
   const [laterality, setLaterality] = useState<Laterality>("right");
@@ -93,6 +94,15 @@ const BodyMap: React.FC<{
             </p>
           </div>
           <div className="flex flex-col items-end gap-2 shrink-0">
+            {onAdHoc && (
+              <button
+                type="button"
+                onClick={onAdHoc}
+                className="px-4 py-2.5 text-sm font-semibold min-h-[44px] rounded-xl bg-primary text-primary-foreground"
+              >
+                Log ad-hoc
+              </button>
+            )}
             <div className="flex rounded-xl border border-border overflow-hidden">
               {(["side", "top"] as MapView[]).map((option) => (
                 <button

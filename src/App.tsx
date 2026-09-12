@@ -21,6 +21,7 @@ import { PinsProvider, usePinsStore, inventoryForPet, type InjectionLog } from '
 import { SecurityProvider } from '@/lib/security-context';
 import { EntitlementProvider } from '@/lib/billing/entitlement-context';
 import { SoftPaywallModal } from '@/components/SoftPaywallModal';
+import { ShotDueNotificationsSync } from '@/components/ShotDueNotificationsSync';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -54,6 +55,7 @@ function BodyMapRoute({
   return (
     <BodyMap
       onLogInjection={(siteId, compoundName) => handleOpenLogger(siteId, compoundName)}
+      onAdHoc={() => handleOpenLogger()}
       logs={logs}
     />
   );
@@ -137,6 +139,7 @@ function AppShell() {
 
   return (
     <div className="bg-background text-foreground min-h-[100dvh] font-sans selection:bg-primary/30">
+      <ShotDueNotificationsSync />
       <ProtectedRouter handleOpenLogger={handleOpenLogger} handleRequestEdit={handleRequestEdit} />
       <BottomNav onOpenLogModal={() => handleOpenLogger()} />
       <InjectionLoggerModal
@@ -149,7 +152,7 @@ function AppShell() {
       <AlertDialog open={!!pendingEdit} onOpenChange={(open) => !open && setPendingEdit(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Edit this dose?</AlertDialogTitle>
+            <AlertDialogTitle>This site has history</AlertDialogTitle>
             <AlertDialogDescription>
               {pendingEdit
                 ? `${pendingEdit.compound} · ${pendingEdit.dose} ${pendingEdit.unit}${
@@ -158,9 +161,26 @@ function AppShell() {
                 : ''}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmEdit}>Edit</AlertDialogAction>
+            <button
+              type="button"
+              className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-background px-4 text-sm font-medium hover:bg-muted/60"
+              onClick={confirmEdit}
+            >
+              Edit
+            </button>
+            <AlertDialogAction
+              onClick={() => {
+                if (!pendingEdit) return;
+                const siteId = pendingEdit.siteId;
+                const compound = pendingEdit.compound;
+                setPendingEdit(null);
+                handleOpenLogger(siteId, compound);
+              }}
+            >
+              Log new / Ad-hoc
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
