@@ -75,6 +75,7 @@ export const inventoryItemSchema = z.object({
   defaultDose: z.number().positive().finite().optional(),
   medType: medTypeSchema.optional(),
   reconstitutedAt: z.string().datetime().optional(),
+  lotNumber: z.string().trim().max(80).optional(),
   updatedAt: z.string().datetime().optional(),
   deletedAt: z.string().datetime().nullable().optional(),
 });

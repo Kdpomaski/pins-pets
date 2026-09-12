@@ -336,6 +336,11 @@ function VialCard({
                   </p>
                 )
               )}
+              {item.lotNumber ? (
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Lot {item.lotNumber}
+                </p>
+              ) : null}
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -540,6 +545,7 @@ function AddInventoryModal({
   const [color, setColor] = useState("#3b82f6");
   const [frequency, setFrequency] = useState("");
   const [defaultDose, setDefaultDose] = useState("");
+  const [lotNumber, setLotNumber] = useState("");
   const [showFreqPicker, setShowFreqPicker] = useState(false);
   const [error, setError] = useState("");
 
@@ -588,6 +594,7 @@ function AddInventoryModal({
       frequency: frequency.trim() || undefined,
       defaultDose: doseVal,
       reconstitutedAt: form === "vial" && isNewCompound ? new Date().toISOString() : undefined,
+      lotNumber: lotNumber.trim() || undefined,
     });
 
     if (!result.ok) {
@@ -703,6 +710,20 @@ function AddInventoryModal({
                 <option value="pump">pump / pipette</option>
               </select>
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Batch / lot number <span className="normal-case tracking-normal font-normal">(optional)</span>
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. A12345"
+              value={lotNumber}
+              onChange={(e) => setLotNumber(e.target.value)}
+              className="w-full bg-input/50 border border-border rounded-lg p-3 text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
+              autoComplete="off"
+            />
           </div>
 
           {form === "vial" && (

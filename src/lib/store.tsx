@@ -76,6 +76,7 @@ export type InventoryItem = {
   defaultDose?: number;
   medType?: MedType;
   reconstitutedAt?: string;
+  lotNumber?: string;
   updatedAt?: string;
   deletedAt?: string | null;
 };
