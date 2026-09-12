@@ -3,7 +3,12 @@ import { Plus, X, Droplet, Info, ChevronDown, Check, Pencil, FlaskConical } from
 import { format } from "date-fns";
 import { usePinsStore, inventoryForPet, type InventoryItem, type DoseUnit, type MedForm, type MedType } from "@/lib/store";
 import { PetSwitcher } from "@/components/Brand";
-import { sortVialsForCompound } from "@/lib/inventory-vials";
+import {
+  clampKitVialCount,
+  DEFAULT_KIT_VIAL_COUNT,
+  expandKitInventoryItems,
+  sortVialsForCompound,
+} from "@/lib/inventory-vials";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   AlertDialog,
@@ -42,7 +47,7 @@ function formatReconstitutedDate(iso?: string) {
 }
 
 export default function Inventory() {
-  const { data, activePet, addInventoryItem, deleteInventoryItem } = usePinsStore();
+  const { data, activePet, addInventoryItem, addInventoryItems, deleteInventoryItem } = usePinsStore();
   const inventory = inventoryForPet(data.inventory, activePet?.id ?? null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<InventoryItem | null>(null);
@@ -123,7 +128,7 @@ export default function Inventory() {
 
       <AnimatePresence>
         {isAddModalOpen && (
-          <AddInventoryModal onClose={() => setIsAddModalOpen(false)} onAdd={addInventoryItem} />
+          <AddInventoryModal onClose={() => setIsAddModalOpen(false)} onAdd={addInventoryItems} />
         )}
       </AnimatePresence>
 
@@ -533,7 +538,9 @@ function AddInventoryModal({
   onAdd,
 }: {
   onClose: () => void;
-  onAdd: (item: Omit<InventoryItem, "id" | "updatedAt">) => { ok: true } | { ok: false; error: string };
+  onAdd: (
+    items: Array<Omit<InventoryItem, "id" | "updatedAt">>,
+  ) => { ok: true } | { ok: false; error: string };
 }) {
   const { data, activePet } = usePinsStore();
   const [name, setName] = useState("");
@@ -546,6 +553,8 @@ function AddInventoryModal({
   const [frequency, setFrequency] = useState("");
   const [defaultDose, setDefaultDose] = useState("");
   const [lotNumber, setLotNumber] = useState("");
+  const [isKit, setIsKit] = useState(false);
+  const [kitCount, setKitCount] = useState(String(DEFAULT_KIT_VIAL_COUNT));
   const [showFreqPicker, setShowFreqPicker] = useState(false);
   const [error, setError] = useState("");
 
@@ -581,7 +590,9 @@ function AddInventoryModal({
       (v) => v.name.toLowerCase() === trimmedName.toLowerCase(),
     );
 
-    const result = onAdd({
+    const vialCount = isKit ? clampKitVialCount(Number(kitCount)) : 1;
+
+    const template: Omit<InventoryItem, "id" | "updatedAt"> = {
       name: trimmedName,
       form,
       petId: activePet?.id ?? null,
@@ -595,7 +606,10 @@ function AddInventoryModal({
       defaultDose: doseVal,
       reconstitutedAt: form === "vial" && isNewCompound ? new Date().toISOString() : undefined,
       lotNumber: lotNumber.trim() || undefined,
-    });
+    };
+
+    const payloads = expandKitInventoryItems(template, vialCount);
+    const result = onAdd(payloads);
 
     if (!result.ok) {
       setError(result.error);
@@ -678,6 +692,43 @@ function AddInventoryModal({
                 <option value="vaccine">Vaccine</option>
                 <option value="other">Other</option>
               </select>
+            </div>
+          </div>
+
+
+          <div className="flex items-start gap-3 rounded-xl border border-border bg-muted/30 p-3">
+            <input
+              id="add-as-kit"
+              type="checkbox"
+              checked={isKit}
+              onChange={(e) => setIsKit(e.target.checked)}
+              className="mt-1 h-4 w-4 accent-primary"
+            />
+            <div className="flex-1">
+              <label htmlFor="add-as-kit" className="cursor-pointer">
+                <span className="block text-sm font-medium text-foreground">Add as kit</span>
+                <span className="block text-xs text-muted-foreground mt-0.5">
+                  Creates multiple identical inventory items (same medication, strength, quantity, and lot).
+                </span>
+              </label>
+              {isKit && (
+                <div className="mt-3 flex items-center gap-2">
+                  <label htmlFor="kit-vial-count" className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    {form === "vial" ? "Vials" : "Count"}
+                  </label>
+                  <input
+                    id="kit-vial-count"
+                    type="number"
+                    min={1}
+                    max={50}
+                    step={1}
+                    value={kitCount}
+                    onChange={(e) => setKitCount(e.target.value)}
+                    onBlur={() => setKitCount(String(clampKitVialCount(Number(kitCount))))}
+                    className="w-20 bg-input/50 border border-border rounded-lg p-2 text-sm text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
@@ -827,10 +878,12 @@ function AddInventoryModal({
 
           <button
             onClick={handleSave}
-            disabled={!name || !totalVolume || (form === "vial" && !concentration)}
+            disabled={!name || !totalVolume || (form === "vial" && !concentration) || (isKit && !Number(kitCount))}
             className="w-full bg-primary text-primary-foreground font-semibold rounded-xl p-4 mt-2 hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
-            Add to Inventory
+            {isKit
+              ? `Add kit (${clampKitVialCount(Number(kitCount))} ${form === "vial" ? "vials" : "items"})`
+              : "Add to Inventory"}
           </button>
         </div>
       </motion.div>

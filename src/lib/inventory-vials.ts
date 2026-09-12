@@ -93,3 +93,30 @@ export function scheduleForRemainingInventory<T extends { compound: string }>(
   const compounds = new Set(inventory.map((v) => v.name));
   return schedule.filter((dose) => compounds.has(dose.compound));
 }
+
+/** Default vial/item count when creating inventory as a kit. */
+export const DEFAULT_KIT_VIAL_COUNT = 10;
+
+/** Inclusive max kit size for the create form. */
+export const MAX_KIT_VIAL_COUNT = 50;
+
+export function clampKitVialCount(raw: number): number {
+  if (!Number.isFinite(raw)) return DEFAULT_KIT_VIAL_COUNT;
+  return Math.min(MAX_KIT_VIAL_COUNT, Math.max(1, Math.floor(raw)));
+}
+
+/**
+ * Expand a single inventory template into N payloads.
+ * First vial of a new compound keeps reconstitutedAt; extras are unreconstituted.
+ */
+export function expandKitInventoryItems<T extends { reconstitutedAt?: string }>(
+  template: T,
+  count: number,
+): T[] {
+  const n = clampKitVialCount(count);
+  return Array.from({ length: n }, (_, index) => {
+    if (index === 0) return { ...template };
+    const { reconstitutedAt: _omit, ...rest } = template;
+    return rest as T;
+  });
+}
