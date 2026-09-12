@@ -78,7 +78,7 @@ function ProtectedRouter({
         <Dashboard onEditLog={handleRequestEdit} />
       </Route>
       <Route path="/calendar">
-        <Calendar onEditLog={handleRequestEdit} />
+        <Calendar onEditLog={handleRequestEdit} onNewLog={handleOpenLogger} />
       </Route>
       <Route path="/inventory" component={Inventory} />
       <Route path="/calculator" component={Calculator} />

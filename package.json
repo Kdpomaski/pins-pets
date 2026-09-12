@@ -16,7 +16,8 @@
     "assets:generate": "node scripts/export-brand-assets.mjs && capacitor-assets generate --iconBackgroundColor '#000000' --iconBackgroundColorDark '#000000' --splashBackgroundColor '#000000' --splashBackgroundColorDark '#000000'",
     "assets:icons": "node scripts/export-brand-assets.mjs",
     "assets:ingest-logo": "node scripts/ingest-bot-ross-logo.mjs",
-    "test:dose-volume": "node --test src/lib/dose-volume.test.mjs"
+    "test:dose-volume": "node --test src/lib/dose-volume.test.mjs",
+    "test:ad-hoc-log": "node --test src/lib/ad-hoc-log.test.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",

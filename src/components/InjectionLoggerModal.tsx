@@ -13,6 +13,7 @@ import {
 import { SPECIES_SITES, siteById, siteLabel } from "@/lib/body-map-data";
 import { useEntitlementsOptional } from "@/lib/billing/entitlement-context";
 import { doseVolumeMl } from "@/lib/dose-volume";
+import { resolveAdHocSiteId } from "@/lib/ad-hoc-log";
 
 type InjectionLoggerModalProps = {
   isOpen: boolean;
@@ -104,6 +105,7 @@ export function InjectionLoggerModal({
   const [error, setError] = useState("");
 
   const editing = Boolean(editLog);
+  const adHocMode = !defaultSiteId && !editing;
   const quickMode = Boolean(defaultSiteId) && !editing;
   const sites = SPECIES_SITES[activePet?.species ?? "dog"];
   const selectedSite = sites.find((s) => s.id === siteId) ?? (siteId ? { id: siteId, label: siteLabel(siteId) } : undefined);
@@ -148,7 +150,7 @@ export function InjectionLoggerModal({
       return;
     }
 
-    setSiteId(defaultSiteId ?? "");
+    setSiteId(resolveAdHocSiteId(defaultSiteId, petLogs));
     setNotes("");
     setWhen(toDatetimeLocalValue(new Date().toISOString()));
 
@@ -160,9 +162,9 @@ export function InjectionLoggerModal({
       setCompound("");
       setDose("");
       setUnit("mg");
-      setMedType(defaultSiteId ? "injection" : "oral");
+      setMedType("injection");
     }
-  }, [isOpen, defaultSiteId, defaultCompoundName, compoundOptions, editLog]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isOpen, defaultSiteId, defaultCompoundName, compoundOptions, editLog, petLogs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const inventoryHasCompound = compoundOptions.some((item) => item.name === compound);
   const compoundChoices =
@@ -176,7 +178,7 @@ export function InjectionLoggerModal({
       return;
     }
     if (needsSite(medType) && !siteId) {
-      setError("Tap a location on the body map, or pick a site.");
+      setError("Select a site to save this ad-hoc dose, or switch to Oral.");
       return;
     }
     if (!compound || !dose) {
@@ -278,10 +280,20 @@ export function InjectionLoggerModal({
                     </p>
                   </>
                 ) : (
-                  <h2 className="text-2xl font-bold text-foreground">
-                    {editing ? "Edit dose" : "Quick log"}
-                    {activePet ? ` · ${activePet.name}` : ""}
-                  </h2>
+                  <>
+                    <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                      {editing ? "Edit dose" : adHocMode ? "Ad-hoc dose" : "Quick log"}
+                    </p>
+                    <h2 className="text-2xl font-bold text-foreground mt-1">
+                      {editing ? "Edit dose" : adHocMode ? "Log without schedule" : "Quick log"}
+                      {activePet ? ` · ${activePet.name}` : ""}
+                    </h2>
+                    {adHocMode && !editing ? (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        No calendar item required — pick med type, site if needed, then Save.
+                      </p>
+                    ) : null}
+                  </>
                 )}
               </div>
               <button
@@ -321,7 +333,7 @@ export function InjectionLoggerModal({
                   onChange={(e) => setSiteId(e.target.value)}
                   className="w-full bg-input/50 border-2 border-border rounded-xl p-4 text-lg text-foreground focus:ring-2 focus:ring-primary focus:outline-none appearance-none"
                 >
-                  <option value="">Tap body map or select site…</option>
+                  <option value="">Select site…</option>
                   {sites.map((site) => (
                     <option key={site.id} value={site.id}>
                       {site.label} ({site.view})
