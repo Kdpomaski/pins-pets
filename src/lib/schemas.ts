@@ -73,6 +73,8 @@ export const inventoryItemSchema = z.object({
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   frequency: z.string().trim().max(40).optional(),
   defaultDose: z.number().positive().finite().optional(),
+  dosePeriod: z.enum(['AM', 'PM']).optional(),
+  doseTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   medType: medTypeSchema.optional(),
   reconstitutedAt: z.string().datetime().optional(),
   lotNumber: z.string().trim().max(80).optional(),

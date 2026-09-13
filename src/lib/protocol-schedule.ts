@@ -1,7 +1,6 @@
+import { resolveInventoryDoseTime, type DosePeriod } from '@/lib/dose-time';
 import { defaultWeekdays } from '@/lib/schedule-export';
 import type { InventoryItem, ScheduledDose } from '@/lib/store';
-
-const DEFAULT_TIME = '08:00';
 
 function compoundKey(petId: string | null | undefined, compound: string): string {
   return `${petId ?? 'none'}::${compound}`;
@@ -41,39 +40,44 @@ export function syncScheduleWithInventory(
     if (!freq || dose == null || dose <= 0) continue;
     if (freq.toLowerCase() === 'as needed') continue;
 
-    seen.add(key);
-    const days = defaultWeekdays(freq);
+    const time = resolveInventoryDoseTime(item);
     const idx = next.findIndex(
       (s) => s.petId === petId && s.compound === item.name && !s.deletedAt,
     );
+
     if (idx >= 0) {
+      seen.add(key);
       const prev = next[idx];
       next[idx] = {
         ...prev,
         dose,
         unit: item.unit,
         medType: item.medType ?? prev.medType,
-        days,
-        time: prev.time || DEFAULT_TIME,
+        days: defaultWeekdays(freq),
+        time: time || prev.time,
         active: true,
         deletedAt: null,
         updatedAt: now,
       };
-    } else {
-      next.push({
-        id: crypto.randomUUID(),
-        petId,
-        compound: item.name,
-        medType: item.medType,
-        dose,
-        unit: item.unit,
-        time: DEFAULT_TIME,
-        days,
-        active: true,
-        updatedAt: now,
-        deletedAt: null,
-      });
+      continue;
     }
+
+    if (!time) continue;
+
+    seen.add(key);
+    next.push({
+      id: crypto.randomUUID(),
+      petId,
+      compound: item.name,
+      medType: item.medType,
+      dose,
+      unit: item.unit,
+      time,
+      days: defaultWeekdays(freq),
+      active: true,
+      updatedAt: now,
+      deletedAt: null,
+    });
   }
 
   return next.map((s) => {
@@ -85,4 +89,27 @@ export function syncScheduleWithInventory(
     }
     return s;
   });
+}
+
+export function applyFutureShotTime(
+  schedule: ScheduledDose[],
+  inventory: InventoryItem[],
+  compound: string,
+  time: string,
+  period: DosePeriod,
+  petId?: string | null,
+  now = new Date().toISOString(),
+): { schedule: ScheduledDose[]; inventory: InventoryItem[] } {
+  return {
+    schedule: schedule.map((dose) =>
+      dose.compound === compound && !dose.deletedAt && (!petId || dose.petId === petId)
+        ? { ...dose, time, active: true, updatedAt: now }
+        : dose,
+    ),
+    inventory: inventory.map((item) =>
+      item.name === compound && !item.deletedAt && (!petId || item.petId === petId)
+        ? { ...item, doseTime: time, dosePeriod: period, updatedAt: now }
+        : item,
+    ),
+  };
 }

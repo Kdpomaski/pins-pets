@@ -16,6 +16,8 @@ export function ProtocolChips({
   doseUnit,
   concentration,
   concentrationUnit,
+  dosePeriod,
+  doseTime,
   className = "mt-3 flex flex-wrap items-center gap-3 relative z-10",
 }: {
   frequency?: string;
@@ -23,6 +25,8 @@ export function ProtocolChips({
   doseUnit: DoseUnit;
   concentration?: number | null;
   concentrationUnit?: DoseUnit;
+  dosePeriod?: "AM" | "PM" | null;
+  doseTime?: string | null;
   className?: string;
 }) {
   const volume = doseVolumeMl({
@@ -31,8 +35,9 @@ export function ProtocolChips({
     concentration,
     concentrationUnit: concentrationUnit ?? doseUnit,
   });
+  const period = dosePeriod || (doseTime && Number(doseTime.slice(0, 2)) >= 12 ? "PM" : doseTime ? "AM" : null);
 
-  if (!frequency && dose == null && !volume) return null;
+  if (!frequency && dose == null && !volume && !period) return null;
 
   return (
     <div className={className}>
@@ -42,6 +47,7 @@ export function ProtocolChips({
           {dose} {doseUnit}/dose
         </Chip>
       ) : null}
+      {period ? <Chip>{period}</Chip> : null}
       {volume ? <Chip>{volume.label}</Chip> : null}
     </div>
   );

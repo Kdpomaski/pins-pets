@@ -6,6 +6,7 @@ import { usePinsStore, inventoryForPet, type InjectionLog } from "@/lib/store";
 import { SecurityBadge, SecuritySettings } from "@/components/SecuritySettings";
 import { PinsPetsHeader, PetSwitcher } from "@/components/Brand";
 import { siteLabel } from "@/lib/body-map-data";
+import { formatDoseTimeLabel } from "@/lib/dose-time";
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function Dashboard({ onEditLog }: { onEditLog?: (log: InjectionLog) => void }) {
@@ -136,7 +137,7 @@ export default function Dashboard({ onEditLog }: { onEditLog?: (log: InjectionLo
                           )}
                         </h3>
                         <p className="text-sm text-muted-foreground">
-                          {dose.dose} {dose.unit} at {dose.time}
+                          {dose.dose} {dose.unit} at {formatDoseTimeLabel(dose.time) ?? dose.time}
                         </p>
                       </div>
                     </div>

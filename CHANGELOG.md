@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased — Kevin GO SoftPaywall OFF (iOS 12 / Android 11)
+
+- Restore Body Map Edit + Log new on history sites; keep ad-hoc CTA and empty-site ad-hoc
+- Inventory AM/PM time-of-day drives calendar schedule and dose-due notifications (no silent 08:00 default)
+- Log doses with the actual timestamp; if AM/PM differs from schedule, prompt to update future doses
+- Empty inventory prompts notifications + add inventory
+- SoftPaywall OFF always
+- iOS `CURRENT_PROJECT_VERSION` 12; Android `versionCode` 11
+
 ## Unreleased — L/R body map, edit shots, empty inventory (1.0.0 / iOS 7 / Android 6)
 
 - Body map Left/Right flip (unflipped side = animal's right); site pins audited vs 3:2 artwork

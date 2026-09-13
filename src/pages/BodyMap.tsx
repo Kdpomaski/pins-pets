@@ -26,9 +26,10 @@ const NEUTRAL_PIN = "rgba(255, 255, 255, 0.12)";
 
 const BodyMap: React.FC<{
   onLogInjection?: (siteId: string, compoundName?: string) => void;
+  onExistingShot?: (logId: string) => void;
   onAdHoc?: () => void;
   logs?: InjectionLog[];
-}> = ({ onLogInjection, onAdHoc, logs = [] }) => {
+}> = ({ onLogInjection, onExistingShot, onAdHoc, logs = [] }) => {
   const { data, activePet } = usePinsStore();
   const [view, setView] = useState<MapView>("side");
   const [laterality, setLaterality] = useState<Laterality>("right");
@@ -191,6 +192,8 @@ const BodyMap: React.FC<{
                 doseUnit={selectedCompound.unit}
                 concentration={selectedCompound.concentration}
                 concentrationUnit={selectedCompound.unit}
+                dosePeriod={selectedCompound.dosePeriod}
+                doseTime={selectedCompound.doseTime}
                 className="mt-3 flex flex-wrap items-center gap-2"
               />
             )}
@@ -210,13 +213,20 @@ const BodyMap: React.FC<{
                 const color = getStatusColor(siteLogs);
                 const lastDate = getLastDate(r.id);
                 const hasFilteredPin = siteLogs.length > 0;
+                const latestLog = siteLogs[0];
                 const title = lastDate ? `${r.label} — Last: ${lastDate}` : r.label;
 
                 return (
                   <button
                     key={`${r.view}-${r.id}`}
                     type="button"
-                    onClick={() => onLogInjection?.(r.id, selectedCompound?.name)}
+                    onClick={() => {
+                      if (latestLog && onExistingShot) {
+                        onExistingShot(latestLog.id);
+                        return;
+                      }
+                      onLogInjection?.(r.id, selectedCompound?.name);
+                    }}
                     aria-label={title}
                     title={title}
                     className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 focus:outline-none focus:ring-4 focus:ring-primary/50 group touch-manipulation"

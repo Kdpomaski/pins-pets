@@ -22,7 +22,16 @@ import { SecurityProvider } from '@/lib/security-context';
 import { EntitlementProvider } from '@/lib/billing/entitlement-context';
 import { SoftPaywallModal } from '@/components/SoftPaywallModal';
 import { ShotDueNotificationsSync } from '@/components/ShotDueNotificationsSync';
-import { useToast } from '@/hooks/use-toast';
+import { ZeroInventoryPrompt } from '@/components/ZeroInventoryPrompt';
+import { requestOpenAddInventory } from '@/lib/inventory-prompt';
+import {
+  getShotDueNotificationsEnabled,
+  setShotDueNotificationsEnabled,
+} from '@/lib/notification-prefs';
+import {
+  requestShotNotificationPermission,
+  rescheduleShotDueNotifications,
+} from '@/lib/shot-notifications';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,8 +46,10 @@ import { siteLabel } from '@/lib/body-map-data';
 
 function BodyMapRoute({
   handleOpenLogger,
+  handleExistingShot,
 }: {
   handleOpenLogger: (siteId?: string, compoundName?: string) => void;
+  handleExistingShot: (logId: string) => void;
 }) {
   const { data, activePet } = usePinsStore();
   const logs = data.logs
@@ -55,6 +66,7 @@ function BodyMapRoute({
   return (
     <BodyMap
       onLogInjection={(siteId, compoundName) => handleOpenLogger(siteId, compoundName)}
+      onExistingShot={handleExistingShot}
       onAdHoc={() => handleOpenLogger()}
       logs={logs}
     />
@@ -64,17 +76,19 @@ function BodyMapRoute({
 function ProtectedRouter({
   handleOpenLogger,
   handleRequestEdit,
+  handleExistingShot,
 }: {
   handleOpenLogger: (siteId?: string, compoundName?: string) => void;
   handleRequestEdit: (log: InjectionLog) => void;
+  handleExistingShot: (logId: string) => void;
 }) {
   return (
     <Switch>
       <Route path="/">
-        <BodyMapRoute handleOpenLogger={handleOpenLogger} />
+        <BodyMapRoute handleOpenLogger={handleOpenLogger} handleExistingShot={handleExistingShot} />
       </Route>
       <Route path="/body-map">
-        <BodyMapRoute handleOpenLogger={handleOpenLogger} />
+        <BodyMapRoute handleOpenLogger={handleOpenLogger} handleExistingShot={handleExistingShot} />
       </Route>
       <Route path="/dashboard">
         <Dashboard onEditLog={handleRequestEdit} />
@@ -92,23 +106,22 @@ function ProtectedRouter({
 
 function AppShell() {
   const { data, activePet } = usePinsStore();
-  const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [modalSiteId, setModalSiteId] = useState<string | null>(null);
   const [modalCompoundName, setModalCompoundName] = useState<string | null>(null);
   const [editLog, setEditLog] = useState<InjectionLog | null>(null);
   const [pendingEdit, setPendingEdit] = useState<InjectionLog | null>(null);
+  const [emptyInventoryOpen, setEmptyInventoryOpen] = useState(false);
+  const [notifEnabled, setNotifEnabled] = useState(getShotDueNotificationsEnabled);
+  const [notifMessage, setNotifMessage] = useState('');
 
   const petInventory = inventoryForPet(data.inventory, activePet?.id ?? null);
 
   const handleOpenLogger = (siteId?: string, compoundName?: string) => {
     if (petInventory.length === 0) {
-      toast({
-        title: 'Add a medication first',
-        description: 'Inventory is empty. Add a compound before logging a dose.',
-      });
-      setLocation('/inventory');
+      setNotifMessage('');
+      setEmptyInventoryOpen(true);
       return;
     }
     setEditLog(null);
@@ -119,6 +132,11 @@ function AppShell() {
 
   const handleRequestEdit = (log: InjectionLog) => {
     setPendingEdit(log);
+  };
+
+  const handleExistingShot = (logId: string) => {
+    const log = data.logs.find((entry) => entry.id === logId);
+    if (log) handleRequestEdit(log);
   };
 
   const confirmEdit = () => {
@@ -140,7 +158,11 @@ function AppShell() {
   return (
     <div className="bg-background text-foreground min-h-[100dvh] font-sans selection:bg-primary/30">
       <ShotDueNotificationsSync />
-      <ProtectedRouter handleOpenLogger={handleOpenLogger} handleRequestEdit={handleRequestEdit} />
+      <ProtectedRouter
+        handleOpenLogger={handleOpenLogger}
+        handleRequestEdit={handleRequestEdit}
+        handleExistingShot={handleExistingShot}
+      />
       <BottomNav onOpenLogModal={() => handleOpenLogger()} />
       <InjectionLoggerModal
         isOpen={isLogModalOpen}
@@ -184,6 +206,36 @@ function AppShell() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <ZeroInventoryPrompt
+        open={emptyInventoryOpen}
+        onClose={() => setEmptyInventoryOpen(false)}
+        notificationsEnabled={notifEnabled}
+        notifMessage={notifMessage}
+        onAddInventory={() => {
+          requestOpenAddInventory();
+          setEmptyInventoryOpen(false);
+          setLocation('/inventory');
+        }}
+        onEnableNotifications={() => {
+          void (async () => {
+            const granted = await requestShotNotificationPermission();
+            if (!granted) {
+              setNotifEnabled(false);
+              setShotDueNotificationsEnabled(false);
+              setNotifMessage('Notification permission is required for dose reminders.');
+              return;
+            }
+            setNotifEnabled(true);
+            setShotDueNotificationsEnabled(true);
+            await rescheduleShotDueNotifications({
+              schedule: data.schedule,
+              logs: data.logs,
+              pets: data.pets,
+              enabled: true,
+            });
+          })();
+        }}
+      />
     </div>
   );
 }
