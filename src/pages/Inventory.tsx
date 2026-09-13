@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, X, Droplet, Info, ChevronDown, Check, Pencil, FlaskConical, Download } from "lucide-react";
 import { format } from "date-fns";
 import { usePinsStore, inventoryForPet, type InventoryItem, type DoseUnit, type MedForm, type MedType } from "@/lib/store";
@@ -23,6 +23,9 @@ import {
 import { ProtocolChips } from "@/components/ProtocolChips";
 import { doseVolumeMl } from "@/lib/dose-volume";
 import { InventoryExportModal } from "@/components/InventoryExportModal";
+import { DosePeriodField } from "@/components/DosePeriodField";
+import { consumeOpenAddInventory } from "@/lib/inventory-prompt";
+import { periodFromTime, timeFromPeriod, type DosePeriod } from "@/lib/dose-time";
 
 const FREQ_OPTIONS = ["Daily", "2x/day", "Every other day", "3x/week", "2x/week", "Weekly", "Bi-weekly", "Monthly", "Yearly", "As needed"];
 
@@ -53,6 +56,10 @@ export default function Inventory() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<InventoryItem | null>(null);
+
+  useEffect(() => {
+    if (consumeOpenAddInventory()) setIsAddModalOpen(true);
+  }, []);
 
   const compoundGroups = useMemo(
     () => groupInventoryByCompound(inventory),
@@ -86,6 +93,8 @@ export default function Inventory() {
       color: template.color,
       frequency: template.frequency,
       defaultDose: template.defaultDose,
+      dosePeriod: template.dosePeriod,
+      doseTime: template.doseTime,
     });
   };
 
@@ -265,6 +274,7 @@ function VialCard({
   const [editingDose, setEditingDose] = useState(false);
   const [freqDraft, setFreqDraft] = useState(item.frequency ?? "");
   const [doseDraft, setDoseDraft] = useState(item.defaultDose != null ? String(item.defaultDose) : "");
+  const currentPeriod = item.dosePeriod ?? periodFromTime(item.doseTime) ?? "";
 
   const percent = Math.max(0, Math.min(100, (item.remainingVolume / item.totalVolume) * 100));
   const isLow = percent < 20;
@@ -424,6 +434,8 @@ function VialCard({
             doseUnit={item.unit}
             concentration={item.concentration}
             concentrationUnit={item.unit}
+            dosePeriod={item.dosePeriod}
+            doseTime={item.doseTime}
           />
         )}
 
@@ -541,6 +553,19 @@ function VialCard({
                   </p>
                 )}
               </div>
+
+              <div>
+                <label className="text-sm text-muted-foreground block mb-1.5">Time of day</label>
+                <DosePeriodField
+                  value={currentPeriod}
+                  onChange={(period: DosePeriod) => {
+                    updateInventory(item.id, { dosePeriod: period, doseTime: timeFromPeriod(period) });
+                  }}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Used for the calendar and dose-due reminders. Not defaulted to 8:00 AM.
+                </p>
+              </div>
             </div>
           </motion.div>
         )}
@@ -568,6 +593,7 @@ function AddInventoryModal({
   const [color, setColor] = useState("#3b82f6");
   const [frequency, setFrequency] = useState("");
   const [defaultDose, setDefaultDose] = useState("");
+  const [dosePeriod, setDosePeriod] = useState<DosePeriod | "">("");
   const [lotNumber, setLotNumber] = useState("");
   const [isKit, setIsKit] = useState(false);
   const [kitCount, setKitCount] = useState(String(DEFAULT_KIT_VIAL_COUNT));
@@ -620,6 +646,8 @@ function AddInventoryModal({
       color,
       frequency: frequency.trim() || undefined,
       defaultDose: doseVal,
+      dosePeriod: dosePeriod || undefined,
+      doseTime: dosePeriod ? timeFromPeriod(dosePeriod) : undefined,
       reconstitutedAt: form === "vial" && isNewCompound ? new Date().toISOString() : undefined,
       lotNumber: lotNumber.trim() || undefined,
     };
@@ -849,6 +877,16 @@ function AddInventoryModal({
                   )}
                 </AnimatePresence>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Time of day
+              </label>
+              <DosePeriodField value={dosePeriod} onChange={setDosePeriod} />
+              <p className="text-xs text-muted-foreground">
+                AM or PM sets calendar + dose-due reminders. Leave unset if this is as-needed.
+              </p>
             </div>
 
             <div className="space-y-2">

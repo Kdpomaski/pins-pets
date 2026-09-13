@@ -17,7 +17,8 @@
     "assets:icons": "node scripts/export-brand-assets.mjs",
     "assets:ingest-logo": "node scripts/ingest-bot-ross-logo.mjs",
     "test:dose-volume": "node --test src/lib/dose-volume.test.mjs",
-    "test:ad-hoc-log": "node --test src/lib/ad-hoc-log.test.mjs"
+    "test:ad-hoc-log": "node --test src/lib/ad-hoc-log.test.mjs",
+    "test:dose-time": "node --test src/lib/dose-time.test.mjs src/lib/protocol-schedule.test.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",

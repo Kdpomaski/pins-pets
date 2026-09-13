@@ -25,7 +25,8 @@ import {
   restoreVolumeToCompound,
   scheduleForRemainingInventory,
 } from "@/lib/inventory-vials";
-import { syncScheduleWithInventory } from "@/lib/protocol-schedule";
+import { applyFutureShotTime, syncScheduleWithInventory } from "@/lib/protocol-schedule";
+import { periodFromTime, type DosePeriod } from "@/lib/dose-time";
 import type { Species } from "@/lib/body-map-data";
 import type { WeightUnit } from "@/lib/weight";
 
@@ -75,6 +76,8 @@ export type InventoryItem = {
   color: string;
   frequency?: string;
   defaultDose?: number;
+  dosePeriod?: DosePeriod;
+  doseTime?: string;
   medType?: MedType;
   reconstitutedAt?: string;
   lotNumber?: string;
@@ -127,6 +130,7 @@ type PinsStoreContextType = {
     items: Array<Omit<InventoryItem, "id" | "updatedAt">>,
   ) => { ok: true } | { ok: false; error: string };
   deleteInventoryItem: (id: string) => void;
+  updateFutureShotTime: (compound: string, time: string, petId?: string | null) => void;
 };
 
 const PinsStoreContext = createContext<PinsStoreContextType | null>(null);
@@ -341,7 +345,9 @@ export function PinsProvider({ children }: { children: ReactNode }) {
         "unit" in updates ||
         "name" in updates ||
         "petId" in updates ||
-        "medType" in updates;
+        "medType" in updates ||
+        "dosePeriod" in updates ||
+        "doseTime" in updates;
       return {
         ...prev,
         inventory,
@@ -382,6 +388,22 @@ export function PinsProvider({ children }: { children: ReactNode }) {
   };
 
   const addInventoryItem = (item: Omit<InventoryItem, "id" | "updatedAt">) => addInventoryItems([item]);
+
+  const updateFutureShotTime = (compound: string, time: string, petId?: string | null) => {
+    const period = periodFromTime(time);
+    if (!period) return;
+    setData((prev) => {
+      const next = applyFutureShotTime(
+        prev.schedule,
+        prev.inventory,
+        compound,
+        time,
+        period,
+        petId ?? prev.activePetId,
+      );
+      return { ...prev, ...next };
+    });
+  };
 
   const deleteInventoryItem = (id: string) => {
     setData((prev) => {
@@ -426,6 +448,7 @@ export function PinsProvider({ children }: { children: ReactNode }) {
         updateInventory,
         addInventoryItem,
         addInventoryItems,
+        updateFutureShotTime,
         deleteInventoryItem,
       }}
     >

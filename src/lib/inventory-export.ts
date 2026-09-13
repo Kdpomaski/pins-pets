@@ -69,6 +69,8 @@ export function buildInventoryCsv(items: InventoryItem[], options?: InventoryExp
     'remaining_quantity',
     'frequency',
     'default_dose',
+    'dose_period',
+    'dose_time',
     'lot_number',
     'reconstituted_at',
     'pet',
@@ -87,6 +89,8 @@ export function buildInventoryCsv(items: InventoryItem[], options?: InventoryExp
       csvEscape(item.remainingVolume),
       csvEscape(item.frequency ?? ''),
       csvEscape(item.defaultDose ?? ''),
+      csvEscape(item.dosePeriod ?? ''),
+      csvEscape(item.doseTime ?? ''),
       csvEscape(item.lotNumber ?? ''),
       csvEscape(item.reconstitutedAt ?? ''),
       csvEscape(options?.petName ?? ''),
@@ -125,6 +129,9 @@ export function buildInventoryText(items: InventoryItem[], options?: InventoryEx
     }
     if (item.frequency) lines.push(`   Frequency: ${item.frequency}`);
     if (item.defaultDose != null) lines.push(`   Default dose: ${item.defaultDose} ${item.unit}`);
+    if (item.dosePeriod || item.doseTime) {
+      lines.push(`   Time of day: ${item.dosePeriod ?? item.doseTime}`);
+    }
     if (item.lotNumber) lines.push(`   Lot: ${item.lotNumber}`);
     if (item.form === 'vial') {
       if (item.reconstitutedAt) {

@@ -14,6 +14,22 @@ import { SPECIES_SITES, siteById, siteLabel } from "@/lib/body-map-data";
 import { useEntitlementsOptional } from "@/lib/billing/entitlement-context";
 import { doseVolumeMl } from "@/lib/dose-volume";
 import { resolveAdHocSiteId } from "@/lib/ad-hoc-log";
+import {
+  formatDoseTimeLabel,
+  hhmmFromTimestamp,
+  loggedPeriodDiffersFromSchedule,
+  periodFromTimestamp,
+} from "@/lib/dose-time";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type InjectionLoggerModalProps = {
   isOpen: boolean;
@@ -79,7 +95,7 @@ export function InjectionLoggerModal({
   defaultCompoundName,
   editLog,
 }: InjectionLoggerModalProps) {
-  const { data, activePet, addLog, updateLog } = usePinsStore();
+  const { data, activePet, addLog, updateLog, updateFutureShotTime } = usePinsStore();
   const entitlements = useEntitlementsOptional();
   const petInventory = useMemo(
     () => inventoryForPet(data.inventory, activePet?.id ?? null),
@@ -103,6 +119,12 @@ export function InjectionLoggerModal({
   const [notes, setNotes] = useState("");
   const [when, setWhen] = useState(() => toDatetimeLocalValue(new Date().toISOString()));
   const [error, setError] = useState("");
+  const [timePrompt, setTimePrompt] = useState<{
+    compound: string;
+    time: string;
+    scheduledLabel: string;
+    loggedLabel: string;
+  } | null>(null);
 
   const editing = Boolean(editLog);
   const adHocMode = !defaultSiteId && !editing;
@@ -223,6 +245,18 @@ export function InjectionLoggerModal({
 
     if (!editing) {
       entitlements?.maybeShowSoftPaywallAfterFirstLog(data.logs.length);
+      const scheduled = data.schedule.find(
+        (s) => s.compound === compound && s.active && !s.deletedAt && s.petId === activePet.id,
+      );
+      if (scheduled && loggedPeriodDiffersFromSchedule(scheduled.time, timestamp)) {
+        setTimePrompt({
+          compound,
+          time: hhmmFromTimestamp(timestamp),
+          scheduledLabel: formatDoseTimeLabel(scheduled.time) ?? scheduled.time,
+          loggedLabel: formatDoseTimeLabel(hhmmFromTimestamp(timestamp)) ?? periodFromTimestamp(timestamp),
+        });
+        return;
+      }
     }
     onClose();
   };
@@ -243,7 +277,16 @@ export function InjectionLoggerModal({
     concentrationUnit: selectedItem?.unit ?? unit,
   });
 
+  const finishTimePrompt = (updateFuture: boolean) => {
+    if (updateFuture && timePrompt) {
+      updateFutureShotTime(timePrompt.compound, timePrompt.time, activePet?.id);
+    }
+    setTimePrompt(null);
+    onClose();
+  };
+
   return (
+    <>
     <AnimatePresence>
       {isOpen && (
         <>
@@ -463,5 +506,21 @@ export function InjectionLoggerModal({
         </>
       )}
     </AnimatePresence>
+    <AlertDialog open={!!timePrompt} onOpenChange={(open) => !open && finishTimePrompt(false)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Update future doses?</AlertDialogTitle>
+          <AlertDialogDescription>
+            You logged this at {timePrompt?.loggedLabel}, but upcoming doses are scheduled for {timePrompt?.scheduledLabel}.
+            Move future doses and reminders to {timePrompt?.loggedLabel}?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => finishTimePrompt(false)}>Keep schedule</AlertDialogCancel>
+          <AlertDialogAction onClick={() => finishTimePrompt(true)}>Update future doses</AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
