@@ -17,7 +17,7 @@ import { AuthGate } from '@/components/AuthGate';
 import { SecurityGate } from '@/components/SecurityGate';
 import AuthCallback from '@/pages/AuthCallback';
 import { AuthProvider } from '@/lib/auth-context';
-import { PinsProvider, usePinsStore, inventoryForPet, type InjectionLog } from '@/lib/store';
+import { PinsProvider, usePinsStore, type InjectionLog } from '@/lib/store';
 import { SecurityProvider } from '@/lib/security-context';
 import { EntitlementProvider } from '@/lib/billing/entitlement-context';
 import { SoftPaywallModal } from '@/components/SoftPaywallModal';
@@ -105,7 +105,7 @@ function ProtectedRouter({
 }
 
 function AppShell() {
-  const { data, activePet } = usePinsStore();
+  const { data } = usePinsStore();
   const [, setLocation] = useLocation();
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [modalSiteId, setModalSiteId] = useState<string | null>(null);
@@ -116,14 +116,7 @@ function AppShell() {
   const [notifEnabled, setNotifEnabled] = useState(getShotDueNotificationsEnabled);
   const [notifMessage, setNotifMessage] = useState('');
 
-  const petInventory = inventoryForPet(data.inventory, activePet?.id ?? null);
-
   const handleOpenLogger = (siteId?: string, compoundName?: string) => {
-    if (petInventory.length === 0) {
-      setNotifMessage('');
-      setEmptyInventoryOpen(true);
-      return;
-    }
     setEditLog(null);
     setModalSiteId(siteId ?? null);
     setModalCompoundName(compoundName ?? null);

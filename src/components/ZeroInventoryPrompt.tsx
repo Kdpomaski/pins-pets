@@ -30,9 +30,9 @@ export function ZeroInventoryPrompt({
     <AlertDialog open={open} onOpenChange={(next) => !next && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Add inventory to log doses</AlertDialogTitle>
+          <AlertDialogTitle>Add inventory for reminders</AlertDialogTitle>
           <AlertDialogDescription>
-            Inventory is empty for this pet. Add a medication so you can log doses and get AM/PM reminders.
+            Inventory is empty for this pet. You can still log an ad-hoc dose by typing any medication. Add inventory for calendar and shot-due reminders.
           </AlertDialogDescription>
         </AlertDialogHeader>
         {notifMessage ? (
