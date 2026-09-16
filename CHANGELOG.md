@@ -1,13 +1,13 @@
 # Changelog
 
-## Unreleased — Kevin GO SoftPaywall OFF (iOS 12 / Android 11)
+## Unreleased — Kevin GO SoftPaywall OFF (iOS 13 / Android 12)
 
-- Restore Body Map Edit + Log new on history sites; keep ad-hoc CTA and empty-site ad-hoc
-- Inventory AM/PM time-of-day drives calendar schedule and dose-due notifications (no silent 08:00 default)
-- Log doses with the actual timestamp; if AM/PM differs from schedule, prompt to update future doses
-- Empty inventory prompts notifications + add inventory
+- Ad-hoc dose compound can be any name: pick from inventory or type free-text (save is not inventory-gated)
+- Inventory items are fully editable, including time of day
+- Time-of-day helper: `Used for the calendar and shot-due reminders. Not defaulted to 8:00 AM.`
+- Calendar and shot-due reminders use the chosen clock time (custom HH:mm, not stuck at 08:00 / 9:00 PM)
 - SoftPaywall OFF always
-- iOS `CURRENT_PROJECT_VERSION` 12; Android `versionCode` 11
+- iOS `CURRENT_PROJECT_VERSION` 13; Android `versionCode` 12
 
 ## Unreleased — L/R body map, edit shots, empty inventory (1.0.0 / iOS 7 / Android 6)
 

@@ -203,16 +203,8 @@ export function InjectionLoggerModal({
       setError("Select a site to save this ad-hoc dose, or switch to Oral.");
       return;
     }
-    if (!compound || !dose) {
-      setError("Select a medication and enter a dose.");
-      return;
-    }
-    if (!editing && !inventoryHasCompound) {
-      setError("Add this medication in Inventory before logging a dose.");
-      return;
-    }
-    if (editing && compound !== editLog?.compound && !inventoryHasCompound) {
-      setError("Switch to a medication that is in Inventory.");
+    if (!compound.trim() || !dose) {
+      setError("Enter a medication and a dose.");
       return;
     }
 
@@ -227,7 +219,7 @@ export function InjectionLoggerModal({
       petId: activePet.id,
       medType,
       siteId: siteId || undefined,
-      compound,
+      compound: compound.trim(),
       dose: doseNum,
       unit,
       timestamp,
@@ -263,10 +255,9 @@ export function InjectionLoggerModal({
 
   const canSave = Boolean(
     activePet &&
-      compound &&
+      compound.trim() &&
       dose &&
-      (!needsSite(medType) || siteId) &&
-      (editing || compoundOptions.length > 0),
+      (!needsSite(medType) || siteId),
   );
 
   const selectedItem = petInventory.find((item) => item.name === compound);
@@ -386,29 +377,27 @@ export function InjectionLoggerModal({
               </div>
             )}
 
-            {compoundChoices.length === 0 ? (
-              <div className="mb-5 rounded-xl border border-border bg-muted/30 p-4 text-center">
-                <p className="text-base text-muted-foreground">
-                  Add a medication in Inventory before logging a dose.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4 mb-5">
+            <div className="space-y-4 mb-5">
                 <div>
                   <label className="text-sm font-semibold text-muted-foreground block mb-2">
                     Medication
                   </label>
-                  <select
+                  <input
+                    list="adhoc-compound-options"
                     value={compound}
                     onChange={(e) => applyCompound(e.target.value)}
-                    className="w-full bg-input/50 border-2 border-border rounded-xl p-4 text-lg font-medium text-foreground focus:ring-2 focus:ring-primary focus:outline-none appearance-none"
-                  >
+                    placeholder="Select from inventory or type any name"
+                    className="w-full bg-input/50 border-2 border-border rounded-xl p-4 text-lg font-medium text-foreground focus:ring-2 focus:ring-primary focus:outline-none"
+                    autoComplete="off"
+                    data-testid="input-adhoc-compound"
+                  />
+                  <datalist id="adhoc-compound-options">
                     {compoundChoices.map((item) => (
                       <option key={item.name} value={item.name}>
                         {item.name}
                       </option>
                     ))}
-                  </select>
+                  </datalist>
                 </div>
 
                 <div>
@@ -480,7 +469,6 @@ export function InjectionLoggerModal({
                   />
                 </div>
               </div>
-            )}
 
             {error && (
               <p className="text-base text-destructive font-medium mb-4" role="alert">
