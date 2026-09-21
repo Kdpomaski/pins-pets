@@ -1,6 +1,6 @@
 /**
  * Lightweight dose-volume / syringe-units tests (node --test, no vitest).
- * Mirrors fixed formatters in src/lib/dose-volume.ts — keep in sync.
+ * Mirrors fixed helpers in src/lib/dose-volume.ts — keep in sync.
  */
 import test from "node:test";
 import assert from "node:assert/strict";
@@ -29,15 +29,36 @@ function convertDoseUnits(dose, from, to) {
   return null;
 }
 
+function concentrationFromRecon(vialAmount, reconVolumeMl) {
+  if (!Number.isFinite(vialAmount) || vialAmount <= 0) return null;
+  if (!Number.isFinite(reconVolumeMl) || reconVolumeMl <= 0) return null;
+  const conc = vialAmount / reconVolumeMl;
+  if (!Number.isFinite(conc) || conc <= 0) return null;
+  return conc;
+}
+
 function doseVolumeMl(input) {
-  const { dose, doseUnit, concentration, concentrationUnit } = input;
+  const {
+    dose,
+    doseUnit,
+    concentration,
+    concentrationUnit,
+    vialAmount,
+    reconVolumeMl,
+  } = input;
   if (dose == null || !Number.isFinite(dose) || dose <= 0) return null;
-  if (concentration == null || !Number.isFinite(concentration) || concentration <= 0) {
+  if (doseUnit === "ml") return null;
+  const fromRecon = concentrationFromRecon(
+    vialAmount ?? NaN,
+    reconVolumeMl ?? NaN,
+  );
+  const effectiveConc = fromRecon ?? concentration;
+  if (effectiveConc == null || !Number.isFinite(effectiveConc) || effectiveConc <= 0) {
     return null;
   }
   const doseInConcUnit = convertDoseUnits(dose, doseUnit, concentrationUnit);
   if (doseInConcUnit == null) return null;
-  const ml = doseInConcUnit / concentration;
+  const ml = doseInConcUnit / effectiveConc;
   if (!Number.isFinite(ml) || ml <= 0) return null;
   return { ml, label: formatSyringeUnits(ml) };
 }
@@ -78,4 +99,33 @@ test("doseVolumeMl: SS-31 5mg @ 50mg/ml → 10 units", () => {
   });
   assert.ok(r);
   assert.equal(r.label, "10 units");
+});
+
+test("concentrationFromRecon: 80mg / 3ml → ≈26.667 mg/ml", () => {
+  const conc = concentrationFromRecon(80, 3);
+  assert.ok(conc);
+  assert.ok(Math.abs(conc - 80 / 3) < 1e-9);
+});
+
+test("KLOW-like recon path: 80mg vial / 3ml / 4mg dose → 15 units (not 5)", () => {
+  const correct = doseVolumeMl({
+    dose: 4,
+    doseUnit: "mg",
+    concentrationUnit: "mg",
+    vialAmount: 80,
+    reconVolumeMl: 3,
+  });
+  assert.ok(correct);
+  assert.equal(correct.label, "15 units");
+  assert.ok(Math.abs(correct.ml - 0.15) < 1e-9);
+
+  const bad = doseVolumeMl({
+    dose: 4,
+    doseUnit: "mg",
+    concentration: 80,
+    concentrationUnit: "mg",
+  });
+  assert.ok(bad);
+  assert.equal(bad.label, "5 units");
+  assert.notEqual(bad.label, correct.label);
 });

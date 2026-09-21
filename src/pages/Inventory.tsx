@@ -21,7 +21,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { ProtocolChips } from "@/components/ProtocolChips";
-import { doseVolumeMl } from "@/lib/dose-volume";
+import { concentrationFromRecon, doseVolumeMl } from "@/lib/dose-volume";
 import { InventoryExportModal } from "@/components/InventoryExportModal";
 import { DosePeriodField } from "@/components/DosePeriodField";
 import { consumeOpenAddInventory } from "@/lib/inventory-prompt";
@@ -621,9 +621,18 @@ function AddInventoryModal({
   const [name, setName] = useState(editItem?.name ?? "");
   const [form, setForm] = useState<MedForm>(editItem?.form ?? "chew");
   const [medType, setMedType] = useState<MedType>(editItem?.medType ?? "oral");
-  const [concentration, setConcentration] = useState(
-    editItem?.concentration != null ? String(editItem.concentration) : "",
-  );
+  const initialVialAmount = (() => {
+    if (!editItem || editItem.form !== "vial") return "";
+    if (
+      editItem.concentration != null &&
+      editItem.totalVolume != null &&
+      editItem.totalVolume > 0
+    ) {
+      return String(Number((editItem.concentration * editItem.totalVolume).toPrecision(12)));
+    }
+    return editItem.concentration != null ? String(editItem.concentration) : "";
+  })();
+  const [vialAmount, setVialAmount] = useState(initialVialAmount);
   const [totalVolume, setTotalVolume] = useState(
     editItem?.totalVolume != null ? String(editItem.totalVolume) : "",
   );
@@ -650,9 +659,18 @@ function AddInventoryModal({
   const draftVolume = doseVolumeMl({
     dose: defaultDose ? Number(defaultDose) : undefined,
     doseUnit: unit,
-    concentration: concentration ? Number(concentration) : undefined,
     concentrationUnit: unit,
+    vialAmount: form === "vial" && vialAmount ? Number(vialAmount) : undefined,
+    reconVolumeMl: form === "vial" && totalVolume ? Number(totalVolume) : undefined,
   });
+
+  const derivedConc =
+    form === "vial"
+      ? concentrationFromRecon(
+          vialAmount ? Number(vialAmount) : NaN,
+          totalVolume ? Number(totalVolume) : NaN,
+        )
+      : null;
 
   const handleSave = () => {
     if (!name || !totalVolume) {
@@ -660,11 +678,28 @@ function AddInventoryModal({
       return;
     }
 
-    const conc = concentration ? Number(concentration) : undefined;
     const vol = Number(totalVolume);
-    if ((concentration && (!Number.isFinite(conc) || conc! <= 0)) || !Number.isFinite(vol) || vol <= 0) {
+    if (!Number.isFinite(vol) || vol <= 0) {
       setError("Quantity must be a positive number.");
       return;
+    }
+    let conc: number | undefined;
+    if (form === "vial") {
+      if (!vialAmount) {
+        setError("Vial amount is required for vials.");
+        return;
+      }
+      const amount = Number(vialAmount);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        setError("Vial amount must be a positive number.");
+        return;
+      }
+      const derived = concentrationFromRecon(amount, vol);
+      if (derived == null) {
+        setError("Could not derive concentration from vial amount ÷ recon volume.");
+        return;
+      }
+      conc = derived;
     }
 
     const doseVal = defaultDose ? Number(defaultDose) : undefined;
@@ -909,14 +944,32 @@ function AddInventoryModal({
           {form === "vial" && (
             <div className="space-y-2">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                Concentration (per ml) <Info size={12} />
+                Vial amount <Info size={12} />
               </label>
-              <input
-                type="number" placeholder="e.g. 5" step="any"
-                value={concentration}
-                onChange={(e) => setConcentration(e.target.value)}
-                className="w-full bg-input/50 border border-border rounded-lg p-3 text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
-              />
+              <div className="flex border border-border rounded-lg overflow-hidden focus-within:ring-1 focus-within:ring-primary">
+                <input
+                  type="number"
+                  placeholder="e.g. 80"
+                  step="any"
+                  value={vialAmount}
+                  onChange={(e) => setVialAmount(e.target.value)}
+                  className="w-full bg-input/50 p-3 text-foreground outline-none min-w-0"
+                />
+                <span className="flex items-center px-3 bg-secondary text-sm text-muted-foreground border-l border-border">
+                  {unit === "mcg" ? "mcg" : unit === "mg" ? "mg" : unit}
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground leading-snug">
+                Total peptide in the vial (not mg/ml). Conc = amount ÷ recon volume (ml).
+              </p>
+              {derivedConc != null ? (
+                <p className="text-xs text-muted-foreground bg-muted/40 border border-border rounded-xl px-4 py-3">
+                  Derived concentration:{" "}
+                  <span className="font-semibold text-foreground">
+                    {Number(derivedConc.toPrecision(4))} {unit}/ml
+                  </span>
+                </p>
+              ) : null}
             </div>
           )}
 
@@ -993,7 +1046,7 @@ function AddInventoryModal({
               </div>
               {draftVolume && (
                 <p className="text-xs text-muted-foreground">
-                  {draftVolume.label} from concentration
+                  {draftVolume.label} from vial amount ÷ recon
                 </p>
               )}
             </div>
@@ -1021,7 +1074,7 @@ function AddInventoryModal({
 
           <button
             onClick={handleSave}
-            disabled={!name || !totalVolume || (form === "vial" && !concentration) || (isKit && !Number(kitCount))}
+            disabled={!name || !totalVolume || (form === "vial" && !vialAmount) || (isKit && !Number(kitCount))}
             className="w-full bg-primary text-primary-foreground font-semibold rounded-xl p-4 mt-2 hover:opacity-90 disabled:opacity-50 transition-opacity"
           >
             {isEditing
