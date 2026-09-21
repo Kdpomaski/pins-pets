@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — recon vial amount → concentration (iOS 14 / Android 13)
+
+- Vial inventory: enter **vial peptide amount** + recon volume; store derived concentration (amount ÷ ml), matching Recon Calculator
+- `doseVolumeMl` prefers `vialAmount` + `reconVolumeMl` — KLOW-like 80mg / 3ml / 4mg dose → **15U** (not 5U)
+- SoftPaywall OFF always
+- iOS `CURRENT_PROJECT_VERSION` 14; Android `versionCode` 13
+
 ## Unreleased — Kevin GO SoftPaywall OFF (iOS 13 / Android 12)
 
 - Ad-hoc dose compound can be any name: pick from inventory or type free-text (save is not inventory-gated)
