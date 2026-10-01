@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased — Sign in with Apple, guest, account deletion (1.0.0 / iOS 15)
+
+- Sign in with Apple via the existing Supabase Apple provider (Team ID K39284B7CL) and the native `com.two20tech.pinspets://auth/callback` return. No Services ID or .p8 is stored in the app.
+- Continue without an account for on-device pet tracking (pets, doses, inventory, calendar, calculators)
+- Settings: permanent account deletion with a clear confirmation (`delete_own_account`)
+- SoftPaywall OFF always
+- Marketing 1.0.0; iOS `CURRENT_PROJECT_VERSION` 15
+
 ## Unreleased — recon vial amount → concentration (iOS 14 / Android 13)
 
 - Vial inventory: enter **vial peptide amount** + recon volume; store derived concentration (amount ÷ ml), matching Recon Calculator

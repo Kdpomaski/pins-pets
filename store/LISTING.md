@@ -2,7 +2,7 @@
 
 **Publisher:** 220 TECH LLC  
 **Bundle ID / applicationId:** `com.two20tech.pinspets`  
-**Version:** 1.0.0  
+**Version:** 1.0.0 (iOS build 15)  
 **Category:** Medical (or Health & Fitness)  
 **Content rating:** 12+ / Teen  
 **Support email:** Customerservice@220bioworx.com  

@@ -6,7 +6,7 @@
 
 Local-first, privacy-focused visual tracker for injections, oral meds, insulin, vaccines, topicals, inventory, and scheduling.
 
-**Current release:** v1.0.0 (2026-08-28)
+**Current release:** v1.0.0 (iOS build 15)
 
 ## Features
 
@@ -22,6 +22,14 @@ Local-first, privacy-focused visual tracker for injections, oral meds, insulin, 
 ## Privacy
 
 Pet health data stays **encrypted on your device** by default. No personal health data is sent to servers unless you explicitly enable cloud backup (not yet available).
+
+## Account (optional)
+
+Local tracker features work **without an account** — choose **Continue without an account** on the sign-in screen.
+
+Sign-in options: **Sign in with Apple** (Supabase Apple provider, Team ID `K39284B7CL`, callback `com.two20tech.pinspets://auth/callback`), Google, or email. The Apple client secret stays in the Supabase dashboard. Do not commit a `.p8` key. No Services ID is hardcoded in the app; the Pets bundle id is `com.two20tech.pinspets`.
+
+Signed-in users can permanently delete the account in **Settings** (shield on Home). Apply `supabase/delete-own-account.sql` once in the Supabase SQL editor before shipping that button.
 
 ## Tech Stack
 

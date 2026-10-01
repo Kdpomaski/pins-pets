@@ -20,7 +20,18 @@ export function hasAuthCallbackParams(href?: string): boolean {
   return Boolean(code || tokenHash || accessToken || error);
 }
 
-export async function completeAuthFromUrl(href?: string): Promise<{ error?: string }> {
+let authCompletion: Promise<void> = Promise.resolve();
+
+export function completeAuthFromUrl(href?: string): Promise<{ error?: string }> {
+  const run = authCompletion.then(() => completeAuthFromUrlInner(href));
+  authCompletion = run.then(
+    () => undefined,
+    () => undefined,
+  );
+  return run;
+}
+
+async function completeAuthFromUrlInner(href?: string): Promise<{ error?: string }> {
   const { code, tokenHash, type, error } = readAuthParams(href);
 
   if (error) {
@@ -33,7 +44,11 @@ export async function completeAuthFromUrl(href?: string): Promise<{ error?: stri
 
   if (code) {
     const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-    if (exchangeError) return { error: exchangeError.message };
+    if (exchangeError) {
+      const { data: afterExchange } = await supabase.auth.getSession();
+      if (afterExchange.session) return {};
+      return { error: exchangeError.message };
+    }
   }
 
   if (tokenHash && type) {

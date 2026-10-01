@@ -37,3 +37,28 @@ create policy "Users can update own profile"
 
 grant select, insert, update on table public.profiles to authenticated;
 grant select on table public.profiles to service_role;
+
+-- Permanent account deletion. Same function as supabase/delete-own-account.sql.
+create or replace function public.delete_own_account()
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Not authenticated';
+  end if;
+
+  if to_regclass('public.user_entitlements') is not null then
+    execute 'delete from public.user_entitlements where user_id = $1'
+      using auth.uid();
+  end if;
+
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+
+revoke all on function public.delete_own_account() from public;
+revoke all on function public.delete_own_account() from anon;
+grant execute on function public.delete_own_account() to authenticated;

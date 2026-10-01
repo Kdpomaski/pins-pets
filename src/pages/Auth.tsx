@@ -1,14 +1,18 @@
 import { useState } from 'react';
+import { FaApple } from 'react-icons/fa';
 import { FcGoogle } from 'react-icons/fc';
 import { Mail, Lock } from 'lucide-react';
 import { supabase, getAuthRedirectUrl, isSupabaseConfigured } from '@/lib/supabase';
+import { startAppleSignIn } from '@/lib/apple-oauth';
 import { startGoogleSignIn } from '@/lib/google-oauth';
+import { useAuth } from '@/lib/auth-context';
 import { PinsPetsLogoIcon } from '@/components/Brand';
 import { Button } from '@/components/ui/button';
 
 type AuthMode = 'sign-in' | 'sign-up';
 
 export default function Auth() {
+  const { continueAsGuest } = useAuth();
   const [mode, setMode] = useState<AuthMode>('sign-in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -74,12 +78,25 @@ export default function Auth() {
     setLoading(false);
   };
 
+  const appleSignIn = async () => {
+    resetMessages();
+    setLoading(true);
+    const { error: oauthError } = await startAppleSignIn();
+    if (oauthError) setError(oauthError);
+    setLoading(false);
+  };
+
   const googleSignIn = async () => {
     resetMessages();
     setLoading(true);
     const { error: oauthError } = await startGoogleSignIn();
     if (oauthError) setError(oauthError);
     setLoading(false);
+  };
+
+  const continueWithoutAccount = () => {
+    resetMessages();
+    continueAsGuest();
   };
 
   const handleSubmit = () => {
@@ -123,28 +140,54 @@ export default function Auth() {
 
           <Button
             type="button"
+            className="w-full min-h-11 bg-black text-white border-black hover:bg-neutral-900"
+            disabled={loading}
+            onClick={() => void appleSignIn()}
+          >
+            <FaApple className="text-lg" />
+            Sign in with Apple
+          </Button>
+
+          <Button
+            type="button"
             variant="outline"
-            className="w-full"
+            className="w-full min-h-11"
             disabled={loading}
             onClick={() => void googleSignIn()}
           >
             <FcGoogle className="text-lg" />
             Continue with Google
           </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full min-h-11"
+            disabled={loading}
+            onClick={continueWithoutAccount}
+          >
+            Continue without an account
+          </Button>
           <p className="text-[11px] text-muted-foreground text-center -mt-2">
-            If Google shows 401, the Client ID in Supabase is still{' '}
-            <code className="font-mono">Pins.App</code>. Replace it with a real{' '}
-            <code className="font-mono">.apps.googleusercontent.com</code> ID — see{' '}
-            <a
-              className="text-primary underline"
-              href="https://supabase.com/dashboard/project/ucijobfqdwkqhdqdffno/auth/providers"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Supabase Google provider
-            </a>
-            .
+            Pets, doses, inventory, and the body map stay on this device. An account is optional.
           </p>
+
+          {import.meta.env.DEV && (
+            <p className="text-[11px] text-muted-foreground text-center -mt-2">
+              If Google shows 401, the Client ID in Supabase is still{' '}
+              <code className="font-mono">Pins.App</code>. Replace it with a real{' '}
+              <code className="font-mono">.apps.googleusercontent.com</code> ID — see{' '}
+              <a
+                className="text-primary underline"
+                href="https://supabase.com/dashboard/project/ucijobfqdwkqhdqdffno/auth/providers"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Supabase Google provider
+              </a>
+              .
+            </p>
+          )}
 
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <div className="h-px flex-1 bg-border" />

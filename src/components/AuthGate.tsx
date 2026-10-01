@@ -14,7 +14,8 @@ function SupabaseSetupNotice() {
         </p>
         <p className="text-muted-foreground">
           Run <code className="text-foreground">supabase/schema.sql</code> in the Supabase SQL editor, then enable
-          Email and Google providers in Authentication → Providers.
+          Email, Google, and Apple providers in Authentication → Providers. The Apple
+          provider is the existing Pins ecosystem setup (Team ID K39284B7CL). Do not put a .p8 key in the app.
         </p>
       </div>
     </div>

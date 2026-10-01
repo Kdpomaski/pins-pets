@@ -63,7 +63,7 @@ export default function Dashboard({ onEditLog }: { onEditLog?: (log: InjectionLo
             <button
               onClick={() => setSecurityOpen(true)}
               className="w-10 h-10 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-primary transition-colors"
-              aria-label="Security settings"
+              aria-label="Settings"
             >
               <Shield size={18} />
             </button>
