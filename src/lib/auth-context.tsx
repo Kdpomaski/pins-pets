@@ -15,10 +15,12 @@ import {
   completeAuthFromUrl,
   hasAuthCallbackParams,
 } from '@/lib/auth-callback';
+import { deleteOwnAccount } from '@/lib/account-deletion';
+import { clearGuestSession, isGuestSession, setGuestSession } from '@/lib/guest-session';
 import { getAuthRedirectUrl, isSupabaseConfigured, supabase } from '@/lib/supabase';
-import { ensureNativeAuthDeepLinkListener, startGoogleOAuth } from '@/lib/native-oauth';
+import { ensureNativeAuthDeepLinkListener, startAppleOAuth, startGoogleOAuth } from '@/lib/native-oauth';
 
-type AuthStatus = 'loading' | 'unauthenticated' | 'onboarding' | 'authenticated';
+type AuthStatus = 'loading' | 'unauthenticated' | 'guest' | 'onboarding' | 'authenticated';
 
 type AuthContextValue = {
   status: AuthStatus;
@@ -28,7 +30,11 @@ type AuthContextValue = {
   profile: UserProfile | null;
   signInWithEmail: (email: string, password: string) => Promise<{ error?: string }>;
   signUpWithEmail: (email: string, password: string) => Promise<{ error?: string; needsConfirmation?: boolean }>;
+  signInWithApple: () => Promise<{ error?: string }>;
   signInWithGoogle: () => Promise<{ error?: string }>;
+  continueAsGuest: () => void;
+  exitGuest: () => void;
+  deleteAccount: () => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 };
@@ -73,23 +79,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
 
     (async () => {
-      const onCallbackRoute = window.location.pathname.endsWith('/auth/callback');
-      if (hasAuthCallbackParams() && !onCallbackRoute) {
-        await completeAuthFromUrl();
-        clearAuthParamsFromUrl();
-      }
+      try {
+        const onCallbackRoute = window.location.pathname.endsWith('/auth/callback');
+        if (hasAuthCallbackParams() && !onCallbackRoute) {
+          await completeAuthFromUrl();
+          clearAuthParamsFromUrl();
+        }
 
-      const { data } = await supabase.auth.getSession();
-      if (cancelled) return;
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      await loadProfile(data.session);
+        const { data, error } = await supabase.auth.getSession();
+        if (cancelled) return;
+        if (error || !data.session) {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
+          setStatus(isGuestSession() ? 'guest' : 'unauthenticated');
+          return;
+        }
+        clearGuestSession();
+        setSession(data.session);
+        setUser(data.session.user ?? null);
+        await loadProfile(data.session);
+      } catch {
+        if (!cancelled) setStatus(isGuestSession() ? 'guest' : 'unauthenticated');
+      }
     })();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === 'INITIAL_SESSION') return;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
-      void loadProfile(nextSession);
+      if (nextSession) {
+        clearGuestSession();
+        void loadProfile(nextSession);
+        return;
+      }
+      setProfile(null);
+      setStatus(isGuestSession() ? 'guest' : 'unauthenticated');
     });
 
     return () => {
@@ -113,12 +138,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message, needsConfirmation };
   }, []);
 
+  const signInWithApple = useCallback(async () => {
+    const { error } = await startAppleOAuth();
+    return { error };
+  }, []);
+
   const signInWithGoogle = useCallback(async () => {
     const { error } = await startGoogleOAuth();
     return { error };
   }, []);
 
+  const continueAsGuest = useCallback(() => {
+    setGuestSession();
+    setSession(null);
+    setUser(null);
+    setProfile(null);
+    setStatus('guest');
+  }, []);
+
+  const exitGuest = useCallback(() => {
+    clearGuestSession();
+    setSession(null);
+    setUser(null);
+    setProfile(null);
+    setStatus('unauthenticated');
+  }, []);
+
+  const deleteAccount = useCallback(async () => {
+    const result = await deleteOwnAccount();
+    if (result.error) return result;
+    clearGuestSession();
+    setSession(null);
+    setUser(null);
+    setProfile(null);
+    setStatus('unauthenticated');
+    return {};
+  }, []);
+
   const signOut = useCallback(async () => {
+    clearGuestSession();
     await supabase.auth.signOut();
     setSession(null);
     setUser(null);
@@ -148,7 +206,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       signInWithEmail,
       signUpWithEmail,
+      signInWithApple,
       signInWithGoogle,
+      continueAsGuest,
+      exitGuest,
+      deleteAccount,
       signOut,
       refreshProfile,
     }),
@@ -159,7 +221,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       profile,
       signInWithEmail,
       signUpWithEmail,
+      signInWithApple,
       signInWithGoogle,
+      continueAsGuest,
+      exitGuest,
+      deleteAccount,
       signOut,
       refreshProfile,
     ],

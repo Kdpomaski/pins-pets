@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Lock, LogOut, Shield, X } from 'lucide-react';
+import { Bell, Lock, LogOut, Shield, Trash2, X } from 'lucide-react';
+import { ACCOUNT_DELETE_CONFIRMATION, ACCOUNT_DELETE_SUMMARY } from '@/lib/account-deletion-copy';
 import { useAuth } from '@/lib/auth-context';
 import { useSecurity } from '@/lib/security-context';
 import { PRIVACY } from '@/lib/privacy';
@@ -38,7 +39,7 @@ export function SecurityBadge() {
 }
 
 export function SecuritySettings({ open, onClose }: SecuritySettingsProps) {
-  const { user, signOut } = useAuth();
+  const { user, signOut, deleteAccount, exitGuest, status } = useAuth();
   const { encryptionMode, enablePassphrase, lock } = useSecurity();
   const entitlements = useEntitlementsOptional();
   const { data } = usePinsStore();
@@ -49,6 +50,8 @@ export function SecuritySettings({ open, onClose }: SecuritySettingsProps) {
   const [billingMsg, setBillingMsg] = useState('');
   const [shotDueOn, setShotDueOn] = useState(getShotDueNotificationsEnabled);
   const [notifMsg, setNotifMsg] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const handleShotDueToggle = async (next: boolean) => {
     setNotifMsg('');
@@ -79,9 +82,24 @@ export function SecuritySettings({ open, onClose }: SecuritySettingsProps) {
     setPassphrase('');
     setConfirm('');
     setError('');
+    setConfirmDelete(false);
+    setDeleteError('');
   };
 
   const handleClose = () => {
+    resetForm();
+    onClose();
+  };
+
+  const handleDeleteAccount = async () => {
+    setLoading(true);
+    setDeleteError('');
+    const result = await deleteAccount();
+    setLoading(false);
+    if (result.error) {
+      setDeleteError(result.error);
+      return;
+    }
     resetForm();
     onClose();
   };
@@ -125,12 +143,12 @@ export function SecuritySettings({ open, onClose }: SecuritySettingsProps) {
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border rounded-t-3xl max-w-md mx-auto shadow-2xl p-6 pb-safe"
+            className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border rounded-t-3xl max-w-md mx-auto shadow-2xl p-6 pb-safe max-h-[90dvh] overflow-y-auto"
           >
             <div className="flex justify-between items-center mb-5">
               <div className="flex items-center gap-2">
                 <Lock size={18} className="text-primary" />
-                <h2 className="text-lg font-semibold">Security</h2>
+                <h2 className="text-lg font-semibold">Settings</h2>
               </div>
               <button
                 onClick={handleClose}
@@ -154,6 +172,85 @@ export function SecuritySettings({ open, onClose }: SecuritySettingsProps) {
                   <p className="text-xs text-muted-foreground pt-1">Signed in as {user.email}</p>
                 )}
               </div>
+
+              {user ? (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => void signOut()}
+                >
+                  <LogOut size={16} />
+                  Sign out
+                </Button>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    You&apos;re using Pins Pets without an account. Pet logs stay on this device.
+                  </p>
+                  <Button variant="outline" className="w-full" onClick={exitGuest}>
+                    Sign in
+                  </Button>
+                </div>
+              )}
+
+              {user && (
+                <div
+                  className="rounded-xl border border-destructive/40 bg-background/50 p-4 space-y-3"
+                  role="region"
+                  aria-label="Delete account"
+                >
+                  <div className="flex items-center gap-2">
+                    <Trash2 size={16} className="text-destructive" />
+                    <p className="font-medium">Delete account</p>
+                  </div>
+                  <p className="text-xs text-muted-foreground">{ACCOUNT_DELETE_SUMMARY}</p>
+                  {confirmDelete ? (
+                    <div className="space-y-3" role="alertdialog" aria-labelledby="delete-account-title">
+                      <p id="delete-account-title" className="text-sm font-medium">
+                        Delete account permanently?
+                      </p>
+                      <p className="text-xs text-muted-foreground">{ACCOUNT_DELETE_CONFIRMATION}</p>
+                      {deleteError && <p className="text-xs text-destructive">{deleteError}</p>}
+                      <Button
+                        variant="destructive"
+                        className="w-full"
+                        disabled={loading}
+                        onClick={() => void handleDeleteAccount()}
+                      >
+                        {loading ? 'Deleting account…' : 'Delete account permanently'}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        disabled={loading}
+                        onClick={() => {
+                          setConfirmDelete(false);
+                          setDeleteError('');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      onClick={() => {
+                        setDeleteError('');
+                        setConfirmDelete(true);
+                      }}
+                    >
+                      Delete account
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {status === 'guest' && !user && (
+                <p className="text-[10px] leading-relaxed text-muted-foreground">
+                  Sign in if you want an account. Local tracker features do not require one.
+                </p>
+              )}
 
               {encryptionMode === 'device' ? (
                 <div className="space-y-3">
@@ -269,15 +366,6 @@ export function SecuritySettings({ open, onClose }: SecuritySettingsProps) {
                 </p>
                 {notifMsg && <p className="text-xs text-destructive">{notifMsg}</p>}
               </div>
-
-              <Button
-                variant="outline"
-                className="w-full"
-                onClick={() => void signOut()}
-              >
-                <LogOut size={16} />
-                Sign out
-              </Button>
             </div>
           </motion.div>
         </>
