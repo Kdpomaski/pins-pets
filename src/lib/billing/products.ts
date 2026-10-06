@@ -7,6 +7,8 @@
  * until Kevin approves the money gate. Display prices are UI stubs only.
  */
 
+import { PAYWALL_ENABLED } from './feature-flags';
+
 export type ProductPeriod = 'monthly' | 'yearly' | 'lifetime';
 
 export type ProductStub = {
@@ -189,6 +191,11 @@ export function canAccessFeature(
   feature: FeatureId,
   opts?: { petCount?: number; protocolCount?: number; isPro?: boolean },
 ): AccessResult {
+  // SoftPaywall OFF: no free-tier caps. The denial copy below is unreachable in this build.
+  if (!PAYWALL_ENABLED) {
+    return { allowed: true };
+  }
+
   const isPro = opts?.isPro ?? false;
   const def = getFeature(feature);
 

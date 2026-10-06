@@ -2,13 +2,13 @@
 
 **Publisher:** 220 TECH LLC  
 **Bundle ID / applicationId:** `com.two20tech.pinspets`  
-**Version:** 1.0.0 (iOS build 15)  
+**Version:** 1.0.0 (iOS build 16)  
 **Category:** Medical (or Health & Fitness)  
 **Content rating:** 12+ / Teen  
-**Support email:** Customerservice@220bioworx.com  
-**Privacy:** https://kdpomaski.github.io/pins-pets/legal/privacy.html  
-**Terms:** https://kdpomaski.github.io/pins-pets/legal/terms.html  
-**Marketing site:** https://kdpomaski.github.io/pins-pets/
+**Support:** No dedicated support page in this repo or on https://the220tech.com (`/support` is 404 as of 2026-10-06). Do not list a Bioworx address. The publisher privacy page https://the220tech.com/privacy.html names mailto:info@the220tech.com; that mailbox may bounce and is not a verified support path.  
+**Privacy:** https://the220tech.com/privacy.html  
+**Terms:** In-app Terms and Conditions (no URL). Bundled copy without a contact email: `public/legal/terms.html`. https://the220tech.com/terms.html is 404.  
+**Marketing site:** https://the220tech.com/
 
 ## Name
 Pins Pets

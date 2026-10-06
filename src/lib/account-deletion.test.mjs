@@ -19,5 +19,7 @@ test('delete_own_account SQL removes the auth user and does not embed secrets', 
 });
 
 test('soft paywall stays hardcoded off', () => {
-  assert.match(flags, /export function isPaywallEnabled\(\): boolean \{\s*return false;/);
+  assert.match(flags, /export const PAYWALL_ENABLED = false;/);
+  assert.match(flags, /export function isPaywallEnabled\(\): boolean \{\s*return PAYWALL_ENABLED;/);
+  assert.doesNotMatch(flags, /PAYWALL_ENABLED = true/);
 });

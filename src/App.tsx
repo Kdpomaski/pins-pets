@@ -20,6 +20,7 @@ import { AuthProvider } from '@/lib/auth-context';
 import { PinsProvider, usePinsStore, type InjectionLog } from '@/lib/store';
 import { SecurityProvider } from '@/lib/security-context';
 import { EntitlementProvider } from '@/lib/billing/entitlement-context';
+import { PAYWALL_ENABLED } from '@/lib/billing/feature-flags';
 import { SoftPaywallModal } from '@/components/SoftPaywallModal';
 import { ShotDueNotificationsSync } from '@/components/ShotDueNotificationsSync';
 import { ZeroInventoryPrompt } from '@/components/ZeroInventoryPrompt';
@@ -244,7 +245,7 @@ function AppRoutes() {
               <PinsProvider>
                 <EntitlementProvider>
                   <AppShell />
-                  <SoftPaywallModal />
+                  {PAYWALL_ENABLED ? <SoftPaywallModal /> : null}
                 </EntitlementProvider>
               </PinsProvider>
             </SecurityGate>

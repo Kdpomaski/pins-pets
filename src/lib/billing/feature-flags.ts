@@ -1,8 +1,8 @@
 /**
  * Freemium / soft-paywall feature flags.
  *
- * Defaults keep TestFlight free:
- * - VITE_PAYWALL_ENABLED = false
+ * Defaults keep the store build free:
+ * - PAYWALL_ENABLED is hard-coded false (VITE_PAYWALL_ENABLED is not read)
  * - VITE_FOUNDING_LIFETIME = false
  * - VITE_BILLING_MOCK = false
  */
@@ -15,9 +15,16 @@ function parseBool(raw: string | undefined, fallback: boolean): boolean {
   return fallback;
 }
 
+/**
+ * Soft paywall + Pro gating UI. Kevin standing GO: OFF always.
+ * Compile-time constant so production builds can drop paywall UI modules.
+ * Do not flip this for an App Store build that has no in-app purchase.
+ */
+export const PAYWALL_ENABLED = false;
+
 /** Soft paywall + Pro gating UI. Kevin standing GO: OFF always. */
 export function isPaywallEnabled(): boolean {
-  return false;
+  return PAYWALL_ENABLED;
 }
 
 /**
