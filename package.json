@@ -19,7 +19,8 @@
     "test:dose-volume": "node --test src/lib/dose-volume.test.mjs",
     "test:ad-hoc-log": "node --test src/lib/ad-hoc-log.test.mjs",
     "test:dose-time": "node --test src/lib/dose-time.test.mjs src/lib/protocol-schedule.test.mjs",
-    "test:auth": "node --experimental-strip-types --test src/lib/guest-session.test.ts src/lib/account-deletion.test.mjs"
+    "test:auth": "node --experimental-strip-types --test src/lib/guest-session.test.ts src/lib/account-deletion.test.mjs",
+    "test:paywall": "node --test src/lib/billing/paywall-off.test.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.1",

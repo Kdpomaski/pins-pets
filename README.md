@@ -6,7 +6,7 @@
 
 Local-first, privacy-focused visual tracker for injections, oral meds, insulin, vaccines, topicals, inventory, and scheduling.
 
-**Current release:** v1.0.0 (iOS build 15)
+**Current release:** v1.0.0 (iOS build 16)
 
 ## Features
 
@@ -52,7 +52,7 @@ Copy `.env.example` to `.env` if you want Supabase login. In dev, auth is skippe
 
 ## Freemium / Pro (stubs)
 
-Pins Pets ships freemium with optional Pro. Soft paywall only — **basic dose log and site rotation are never hard-blocked**. Free includes **1 pet**, **2 protocols**, and **full map history**.
+Pins Pets keeps optional Pro code behind `PAYWALL_ENABLED` (hard-coded **off**). The App Store build has **no in-app purchase** and must not render Pro, restore, price, or tier-limit UI. While the flag is off, the 1-pet and 2-protocol caps are not enforced. Basic dose log and site rotation are never hard-blocked. When the flag is on later, Free is **1 pet**, **2 protocols**, and **full map history**.
 
 Product ID stubs (do **not** create live IAP in App Store Connect / Play until Kevin money gate):
 

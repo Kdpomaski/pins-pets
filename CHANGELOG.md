@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — Apple 3.1.1 / 1.5 (1.0.0 / iOS 16)
+
+- SoftPaywall stays OFF. Settings no longer shows Pins Pets Pro, tier-limit copy, or Restore purchases. Vet disclaimer stays in its own card.
+- While the flag is off, the 1-pet and 2-protocol caps are not enforced.
+- Support in Settings and bundled legal pages: https://the220tech.com/support and mailto:info@the220tech.com. No Bioworx contact. Catalog browser opens stay behind the paywall flag.
+- Marketing 1.0.0; iOS `CURRENT_PROJECT_VERSION` 16; Android `versionCode` 14 (was 13)
+
 ## Unreleased — Sign in with Apple, guest, account deletion (1.0.0 / iOS 15)
 
 - Sign in with Apple via the existing Supabase Apple provider (Team ID K39284B7CL) and the native `com.two20tech.pinspets://auth/callback` return. No Services ID or .p8 is stored in the app.

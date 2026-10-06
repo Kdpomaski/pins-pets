@@ -2,7 +2,10 @@
  * Soft paywall / upgrade copy — Pins Pets.
  * No veterinary claims. No in-app peptide sales.
  * Website catalog CTAs deferred (Kevin 2026-09-05).
+ * Rendered only when PAYWALL_ENABLED is true.
  */
+
+import { VET_DISCLAIMER } from '../vet-disclaimer';
 
 export const PAYWALL_COPY = {
   headline: 'Unlock Pins Pets Pro',
@@ -18,8 +21,7 @@ export const PAYWALL_COPY = {
   continueFreeAlt: 'Continue with Free',
   legalRow:
     'Auto-renewing subscriptions billed by Apple or Google. Cancel anytime in your store account settings. Pins Pets is a personal organization tool — not a veterinary device and not a substitute for a veterinarian.',
-  disclaimer:
-    'Pins Pets is a personal organization tool from 220 Tech LLC. It is not a veterinary device and does not replace a veterinarian. Always consult a qualified veterinarian. Nothing in this app sells products or offers veterinary treatment.',
+  disclaimer: VET_DISCLAIMER,
   noInAppSales: 'Pins Pets never sells peptides or pet products inside the app.',
   publisherNote: 'Published by 220 Tech LLC.',
 } as const;
