@@ -4,7 +4,7 @@
 
 - SoftPaywall stays OFF. Settings no longer shows Pins Pets Pro, tier-limit copy, or Restore purchases. Vet disclaimer stays in its own card.
 - While the flag is off, the 1-pet and 2-protocol caps are not enforced.
-- Bundled legal pages no longer mention a Bioworx contact. No new support email was added: https://the220tech.com has no support page.
+- Support in Settings and bundled legal pages: https://the220tech.com/support and mailto:info@the220tech.com. No Bioworx contact. Catalog browser opens stay behind the paywall flag.
 - Marketing 1.0.0; iOS `CURRENT_PROJECT_VERSION` 16; Android `versionCode` 14 (was 13)
 
 ## Unreleased — Sign in with Apple, guest, account deletion (1.0.0 / iOS 15)

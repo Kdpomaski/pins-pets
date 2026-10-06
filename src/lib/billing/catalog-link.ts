@@ -2,7 +2,9 @@
 /**
  * Website deep-link helper for the research catalog (220bioworx.com).
  * NEVER open in-app peptide checkout — commerce stays on the website.
+ * While PAYWALL_ENABLED is false this must not open a browser or return a URL.
  */
+import { PAYWALL_ENABLED } from './feature-flags';
 
 export const BIOWORX_SITE_ORIGIN = 'https://www.220bioworx.com';
 
@@ -23,6 +25,7 @@ export function getResearchCatalogUrl(
   context: CatalogLinkContext = 'browse_catalog',
   path: string = RESEARCH_CATALOG_PATH,
 ): string {
+  if (!PAYWALL_ENABLED) return '';
   const base = BIOWORX_SITE_ORIGIN.replace(/\/$/, '');
   const normalized = path.startsWith('/') ? path : path ? `/${path}` : RESEARCH_CATALOG_PATH;
   const url = new URL(`${base}${normalized}`);
@@ -34,7 +37,9 @@ export function getResearchCatalogUrl(
 
 /** Open research catalog in the system browser. Never performs in-app checkout. */
 export function openResearchCatalog(context: CatalogLinkContext = 'browse_catalog'): void {
+  if (!PAYWALL_ENABLED) return;
   const href = getResearchCatalogUrl(context);
+  if (!href) return;
   try {
     window.open(href, '_blank', 'noopener,noreferrer');
   } catch (err) {

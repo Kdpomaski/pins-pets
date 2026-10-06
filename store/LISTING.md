@@ -5,9 +5,10 @@
 **Version:** 1.0.0 (iOS build 16)  
 **Category:** Medical (or Health & Fitness)  
 **Content rating:** 12+ / Teen  
-**Support:** No dedicated support page in this repo or on https://the220tech.com (`/support` is 404 as of 2026-10-06). Do not list a Bioworx address. The publisher privacy page https://the220tech.com/privacy.html names mailto:info@the220tech.com; that mailbox may bounce and is not a verified support path.  
+**Support URL:** https://the220tech.com/support  
+**Support email:** info@the220tech.com  
 **Privacy:** https://the220tech.com/privacy.html  
-**Terms:** In-app Terms and Conditions (no URL). Bundled copy without a contact email: `public/legal/terms.html`. https://the220tech.com/terms.html is 404.  
+**Terms:** In-app Terms and Conditions (no URL). Bundled copy: `public/legal/terms.html` (contact is the support URL and info@the220tech.com). https://the220tech.com/terms.html is not used.  
 **Marketing site:** https://the220tech.com/
 
 ## Name

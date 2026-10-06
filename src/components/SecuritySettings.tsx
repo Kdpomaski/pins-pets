@@ -12,6 +12,7 @@ import {
   PAYWALL_COPY,
   restorePurchases,
 } from '@/lib/billing';
+import { SUPPORT_EMAIL, SUPPORT_MAILTO, SUPPORT_URL } from '@/lib/support';
 import { VET_DISCLAIMER } from '@/lib/vet-disclaimer';
 import {
   getShotDueNotificationsEnabled,
@@ -344,6 +345,21 @@ export function SecuritySettings({ open, onClose }: SecuritySettingsProps) {
 
               <div className="rounded-xl border border-border bg-background/50 p-4">
                 <p className="text-[10px] leading-relaxed text-muted-foreground">{VET_DISCLAIMER}</p>
+              </div>
+
+              <div className="rounded-xl border border-border bg-background/50 p-4 space-y-2">
+                <p className="font-medium">Support</p>
+                <a
+                  href={SUPPORT_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-xs text-primary underline break-all"
+                >
+                  {SUPPORT_URL}
+                </a>
+                <a href={SUPPORT_MAILTO} className="block text-xs text-primary underline">
+                  {SUPPORT_EMAIL}
+                </a>
               </div>
 
               <div className="rounded-xl border border-border bg-background/50 p-4 space-y-3">

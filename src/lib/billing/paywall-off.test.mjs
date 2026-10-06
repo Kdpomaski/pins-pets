@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import test from 'node:test';
 
 const flags = readFileSync(new URL('./feature-flags.ts', import.meta.url), 'utf8');
@@ -35,13 +36,51 @@ test('paywall modal is not mounted when the flag is off', () => {
   assert.match(app, /\{PAYWALL_ENABLED \? <SoftPaywallModal \/> : null\}/);
 });
 
-test('bundled legal pages do not name Bioworx or a mailto', () => {
+test('support contact is the official https page and mailbox', () => {
+  const support = readFileSync(new URL('../support.ts', import.meta.url), 'utf8');
+  assert.match(support, /https:\/\/the220tech\.com\/support/);
+  assert.match(support, /info@the220tech\.com/);
+  assert.match(settings, /SUPPORT_URL/);
+  assert.match(settings, /SUPPORT_MAILTO/);
   for (const html of [privacy, terms]) {
     assert.doesNotMatch(html, /220bioworx/i);
     assert.doesNotMatch(html, /bioworx/i);
-    assert.doesNotMatch(html, /mailto:/i);
-    assert.match(html, /https:\/\/the220tech\.com/);
+    assert.match(html, /href="https:\/\/the220tech\.com\/support"/);
+    assert.match(html, /href="mailto:info@the220tech\.com"/);
   }
+});
+
+function listSources(dir, acc = []) {
+  for (const name of readdirSync(dir)) {
+    const path = join(dir, name);
+    if (statSync(path).isDirectory()) listSources(path, acc);
+    else if (/\.(ts|tsx|html)$/.test(name)) acc.push(path);
+  }
+  return acc;
+}
+
+test('no external purchase or checkout opener while paywall code is gated', () => {
+  const catalog = readFileSync(new URL('./catalog-link.ts', import.meta.url), 'utf8');
+  const openAt = catalog.indexOf('window.open');
+  const guardAt = catalog.indexOf('if (!PAYWALL_ENABLED) return;');
+  assert.ok(guardAt > -1 && openAt > guardAt);
+
+  const srcRoot = new URL('../../', import.meta.url);
+  const files = listSources(srcRoot.pathname);
+  const windowOpens = files.filter((file) => readFileSync(file, 'utf8').includes('window.open'));
+  assert.deepEqual(
+    windowOpens.map((file) => file.split('/src/')[1]),
+    ['lib/billing/catalog-link.ts'],
+  );
+  const browserOpens = files.filter((file) => readFileSync(file, 'utf8').includes('Browser.open'));
+  assert.deepEqual(
+    browserOpens.map((file) => file.split('/src/')[1]),
+    ['lib/native-oauth.ts'],
+  );
+
+  const joined = files.map((file) => readFileSync(file, 'utf8')).join('\n');
+  assert.doesNotMatch(joined, /stripe|revenuecat|checkout\.com|buy\.stripe/i);
+  assert.match(readFileSync(new URL('../../lib/native-oauth.ts', import.meta.url), 'utf8'), /signInWithOAuth/);
 });
 
 test('store build numbers', () => {
